@@ -3,14 +3,20 @@ import { useState, type ComponentProps } from 'react';
 import Image from 'next/image';
 import { ImageOff } from 'lucide-react';
 
-// Optimization may fail independently of Wikimedia. Retry the source once,
-// then show a useful state instead of leaving the browser's broken image box.
-export function WikiImage(props: ComponentProps<typeof Image> & { src: string }) {
+type WikiImageProps = ComponentProps<typeof Image> & { src: string; fallbackSrc?: string };
+// Try the source thumbnail after an optimizer failure, then the original file
+// if Wikimedia's thumbnail service is unavailable.
+export function WikiImage(props: WikiImageProps) {
   return <SourceImage key={props.src} {...props}/>;
 }
-function SourceImage({ src, alt, ...props }: ComponentProps<typeof Image> & { src: string }) {
+function SourceImage({ src, fallbackSrc, alt, ...props }: WikiImageProps) {
   const [direct, setDirect] = useState(false), [failed, setFailed] = useState(false);
+  const [original, setOriginal] = useState(false);
   if (failed) return <span className="image-unavailable" role="status"><ImageOff size={20}/><span>Image unavailable</span></span>;
   const vector = /\.svg(?:\?|$)/i.test(src);
-  return <Image {...props} src={src} alt={alt} unoptimized={direct || vector || props.unoptimized} onError={() => { if (!direct && !vector && !props.unoptimized) setDirect(true); else setFailed(true); }}/>;
+  return <Image {...props} src={original ? fallbackSrc! : src} alt={alt} unoptimized={original || direct || vector || props.unoptimized} onError={() => {
+    if (!original && !direct && !vector && !props.unoptimized) setDirect(true);
+    else if (!original && fallbackSrc && fallbackSrc !== src) setOriginal(true);
+    else setFailed(true);
+  }}/>;
 }

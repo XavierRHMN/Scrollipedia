@@ -26,6 +26,18 @@ test('optimization failure retries the image from its Wikimedia source', async (
   await expect(image).toHaveAttribute('src', /^https:\/\/(upload|thumb)\.wikimedia\.org\//);
 });
 
+test('thumbnail failures fall back to the original image file', async ({ page }) => {
+  const original = 'https://upload.wikimedia.org/wikipedia/test/original.png';
+  await page.route('**/api/wikipedia?offset=*', route => route.fulfill({ json: { articles: [{pageId:1,title:'Image fallback',extract:'An article with a picture.',url:'https://en.wikipedia.org/wiki/Test',thumbnail:'https://upload.wikimedia.org/wikipedia/test/thumbnail.png',originalImage:original}],next:1 } }));
+  await page.route('**/_next/image?*', route => route.fulfill({status:502,body:'Optimizer unavailable'}));
+  await page.route('https://upload.wikimedia.org/wikipedia/test/thumbnail.png', route => route.fulfill({status:429,body:'Thumbnail service busy'}));
+  await page.route(original, route => route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="blue"/></svg>'}));
+  await page.goto('/scroll');
+  const image = page.locator('.topic-post').first().locator('.post-media');
+  await expect(image).toHaveAttribute('src', original);
+  await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+});
+
 test('source failure shows a useful state, and unconfigured narration is disabled', async ({ page, request }) => {
   await page.route('**/_next/image?*', route => route.fulfill({ status: 502, body: 'Temporary optimizer failure' }));
   await page.route(/^https:\/\/(upload|thumb)\.wikimedia\.org\//, route => route.fulfill({ status: 404, body: 'Missing image' }));
