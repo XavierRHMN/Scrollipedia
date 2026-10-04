@@ -1,0 +1,66 @@
+import { test, expect } from '@playwright/test';
+import { seedFeed } from './fixtures';
+test.beforeEach(async ({page,request}) => { await seedFeed(page,request); });
+async function openSettings(page: import('@playwright/test').Page) {
+  await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Settings',exact:true})).toBeVisible();
+}
+test('settings theme and source-link choices persist, and the dialog closes with Escape', async ({page}) => {
+  await page.goto('/scroll');
+  await expect(page.locator('.topic-post').first()).toBeVisible();
+  await openSettings(page);
+  await page.getByRole('radio',{name:'Dark',exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+  await page.getByRole('switch',{name:'Open links in English Wikipedia',exact:true}).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog',{name:'Settings',exact:true})).not.toBeVisible();
+  await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeFocused();
+  await expect(page.locator('.post-source').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+  await expect(page.locator('.post-source').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
+  await openSettings(page);
+  const bounds = await page.getByRole('dialog',{name:'Settings',exact:true}).boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.getByRole('radio',{name:'Light',exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+  await page.getByRole('radio',{name:'Auto',exact:true}).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','auto');
+});
+test('turning storage off keeps session saves but removes persistence', async ({page}) => {
+  await page.goto('/scroll');
+  await page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true}).click();
+  await openSettings(page);
+  await page.getByRole('switch',{name:'Store data',exact:true}).click();
+  await expect(page.getByRole('switch',{name:'Store data',exact:true})).toHaveAttribute('aria-checked','false');
+  expect(await page.evaluate(() => localStorage.getItem('scrollipedia.library.v1'))).toBeNull();
+  await page.getByRole('button',{name:'Close settings'}).click();
+  await expect(page.locator('.topic-post').first().getByRole('button',{name:'Saved',exact:true})).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true})).toBeVisible();
+  await page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true}).click();
+  expect(await page.evaluate(() => localStorage.getItem('scrollipedia.library.v1'))).toBeNull();
+  await openSettings(page);
+  await page.getByRole('switch',{name:'Store data',exact:true}).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('scrollipedia.library.v1') || '{}').saved?.length)).toBe(1);
+});
+test('reset preserves saves, while confirmed deletion removes library and preferences', async ({page}) => {
+  await page.goto('/scroll');
+  await page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true}).click();
+  await openSettings(page);
+  await page.getByRole('button',{name:'Reset discovery',exact:true}).click();
+  await expect(page.locator('.topic-post').first().getByRole('button',{name:'Saved',exact:true})).toBeVisible();
+  await openSettings(page);
+  await page.getByRole('radio',{name:'Dark',exact:true}).click();
+  await page.getByRole('button',{name:'Delete all data',exact:true}).click();
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('scrollipedia.library.v1') || '{}').saved.length)).toBe(1);
+  await page.getByRole('button',{name:'Delete all data',exact:true}).click();
+  await page.getByRole('button',{name:'Confirm delete',exact:true}).click();
+  await expect(page.getByRole('dialog',{name:'Settings',exact:true})).not.toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme','auto');
+  await expect(page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true})).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('scrollipedia.library.v1'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('scrollipedia.settings.v1'))).toBeNull();
+});

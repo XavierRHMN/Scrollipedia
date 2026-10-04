@@ -1,0 +1,642 @@
+SCROLLIPEDIA — CODEX HANDOFF
+============================
+
+PROJECT SUMMARY
+---------------
+Scrollipedia is a hackathon web app inspired by Xipedia, but designed to be a more polished and explorable Wikipedia experience.
+
+The product has exactly THREE core sections:
+
+1. SCROLL
+2. EXPLORE
+3. LIBRARY
+
+Do not add extra product modes, dashboards, chatbots, quizzes, podcasts, social features, or unrelated AI gimmicks unless explicitly requested later.
+
+CORE PRODUCT IDEA
+-----------------
+Scrollipedia turns Wikipedia into a modern discovery experience:
+
+- SCROLL = discover interesting Wikipedia topics in a vertical feed
+- EXPLORE = open a topic into a structured visual mindmap with related concepts and article sections
+- LIBRARY = save topics and exploration paths for later
+
+The goal is to feel like a better version of Xipedia while remaining fast, visual, and simple enough to demo cleanly in ~3 minutes.
+
+PRIMARY UX
+----------
+SCROLL
+- Full-screen or near-full-screen vertical card feed
+- Each card should show:
+  - article title
+  - lead image if available
+  - concise summary / hook
+  - topic/category metadata if useful
+  - Save button
+  - Explore button
+  - optional small audio/play button for ElevenLabs narration
+- Smooth swipe/scroll interaction
+- Mobile-first
+- Load the next cards efficiently
+- Avoid dumping full Wikipedia articles into the feed
+
+EXPLORE
+- Opened from any Scroll card or Library item
+- Main visual is an interactive mindmap / knowledge graph
+- Center node = current Wikipedia topic
+- Branch nodes = related concepts/entities/topics
+- Clicking a node should:
+  - either expand that branch
+  - or navigate/focus the graph on that topic
+- Show article sections in a clean side panel or bottom sheet
+- Sections can include:
+  - Overview
+  - History
+  - Key ideas
+  - Related topics
+  - Other sections derived from the article
+- The experience should feel visual and exploratory, not like reading raw Wikipedia
+
+LIBRARY
+- Saved topics
+- Saved exploration paths / rabbit holes if practical
+- Clean grid/list of saved knowledge
+- Clicking an item reopens it in Explore
+- If feasible, show a lightweight personal knowledge graph of saved topics
+- Keep Library simple for MVP
+
+TECH STACK
+----------
+Use:
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- React Flow / @xyflow/react for mindmaps
+- Lucide React for icons
+- Framer Motion for transitions/animations if useful
+- Supabase for persistence
+- Wikipedia / MediaWiki APIs
+- Wikidata APIs
+- Gemini API
+- ElevenLabs API
+- Vercel for deployment
+
+Prefer App Router.
+
+Suggested setup:
+
+npx create-next-app@latest scrollipedia
+
+Choose:
+- TypeScript: yes
+- ESLint: yes
+- Tailwind: yes
+- App Router: yes
+- Turbopack: yes
+
+Suggested packages:
+
+npm install @xyflow/react
+npm install framer-motion
+npm install lucide-react
+npm install @supabase/supabase-js
+
+Then initialize shadcn/ui.
+
+ROUTES
+------
+Recommended route structure:
+
+/
+  -> redirect to /scroll or serve Scroll directly
+
+/scroll
+  -> vertical discovery feed
+
+/explore/[title-or-pageid]
+  -> mindmap + article sections
+
+/library
+  -> saved topics and paths
+
+Use shareable URLs.
+Do not keep Explore entirely inside ephemeral React state.
+
+DATA SOURCES
+------------
+WIKIPEDIA
+Use Wikipedia for:
+- title
+- summary/extract
+- lead image
+- article sections
+- links
+- page IDs
+- source URLs
+
+WIKIDATA
+Use Wikidata for structured relationships where helpful:
+- people
+- places
+- events
+- organizations
+- dates
+- occupations
+- related entities
+- parent/child concepts
+
+The core factual layer should come from Wikipedia/Wikidata.
+
+GEMINI API
+----------
+Gemini should work mostly behind the scenes.
+
+Use Gemini for:
+- turning Wikipedia content into concise feed hooks
+- structuring article content into clean sections
+- selecting the most useful/interesting related concepts for Explore
+- optionally generating short descriptions for graph nodes
+- ranking or organizing related concepts
+
+IMPORTANT:
+Gemini should NOT become a separate chatbot mode.
+Do not add an “Ask AI” tab.
+Do not let Gemini invent unsupported knowledge when factual data can come from Wikipedia/Wikidata.
+
+Preferred pattern:
+
+Wikipedia/Wikidata = factual source layer
+Gemini = transformation / organization layer
+
+Whenever possible, pass real source content into Gemini and ask for structured JSON.
+
+Example conceptual output:
+
+{
+  "hook": "A short compelling factual hook",
+  "summary": "A concise summary",
+  "sections": [
+    {
+      "title": "Overview",
+      "content": "..."
+    }
+  ],
+  "relatedTopics": [
+    {
+      "title": "Related Topic",
+      "reason": "Why it connects"
+    }
+  ]
+}
+
+ELEVENLABS
+----------
+ElevenLabs should be minimal and supportive.
+
+Use it only for optional narration:
+- Scroll card summary narration
+- Explore section narration
+
+UI:
+- small play/pause button
+- no separate audio mode
+- no podcast generator
+- no voice assistant
+- no conversational agent unless explicitly requested later
+
+The product must still be completely understandable without audio.
+
+SUPABASE
+--------
+Keep the database minimal.
+
+Suggested tables:
+
+users
+- id
+- email
+- created_at
+
+saved_articles
+- id
+- user_id
+- wiki_page_id
+- title
+- image_url
+- saved_at
+
+exploration_paths
+- id
+- user_id
+- name
+- created_at
+
+exploration_path_nodes
+- id
+- path_id
+- wiki_page_id
+- title
+- parent_page_id
+- position
+- created_at
+
+article_interactions (optional)
+- id
+- user_id
+- wiki_page_id
+- action
+- created_at
+
+Possible actions:
+- view
+- save
+- explore
+- skip
+
+Authentication is optional for the earliest demo.
+If auth becomes a time sink, use localStorage first and wire Supabase later.
+
+SUGGESTED PROJECT STRUCTURE
+---------------------------
+app/
+  page.tsx
+
+  scroll/
+    page.tsx
+
+  explore/
+    [slug]/
+      page.tsx
+
+  library/
+    page.tsx
+
+  api/
+    wikipedia/
+      route.ts
+
+    wikidata/
+      route.ts
+
+    gemini/
+      route.ts
+
+    elevenlabs/
+      route.ts
+
+components/
+  layout/
+    AppNav.tsx
+
+  scroll/
+    Feed.tsx
+    FeedCard.tsx
+    FeedSkeleton.tsx
+
+  explore/
+    KnowledgeGraph.tsx
+    TopicNode.tsx
+    ArticleSections.tsx
+    ExplorePanel.tsx
+
+  library/
+    SavedTopicCard.tsx
+    LibraryGrid.tsx
+
+  audio/
+    NarrationButton.tsx
+
+lib/
+  wikipedia.ts
+  wikidata.ts
+  gemini.ts
+  elevenlabs.ts
+  supabase.ts
+
+types/
+  wikipedia.ts
+  graph.ts
+  library.ts
+
+CORE TYPES
+----------
+Example:
+
+type WikiArticle = {
+  pageId: number;
+  title: string;
+  description?: string;
+  extract: string;
+  thumbnail?: string;
+  url?: string;
+};
+
+type GraphNode = {
+  id: string;
+  title: string;
+  description?: string;
+  wikiPageId?: number;
+};
+
+type GraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+};
+
+DESIGN DIRECTION
+----------------
+The app should feel:
+- modern
+- minimal
+- editorial
+- fast
+- visually premium
+- mobile-first
+
+Avoid:
+- generic SaaS dashboard styling
+- excessive gradients
+- clutter
+- too many controls
+- huge settings panels
+- obvious “AI app” aesthetics
+
+Navigation should prominently show:
+
+Scroll | Explore | Library
+
+Explore may be contextual, but the three concepts should remain obvious.
+
+Use smooth animations but keep performance high.
+
+SCROLL DESIGN
+-------------
+Aim for:
+- large imagery
+- strong typography
+- readable summary text
+- minimal buttons
+- satisfying snap scrolling
+- clear Save and Explore actions
+
+Potential card layout:
+
+[ large image ]
+
+ARTICLE TITLE
+
+1–3 sentence hook / summary
+
+[ Save ] [ Explore ] [ Play ]
+
+Cards should feel interesting immediately.
+
+EXPLORE DESIGN
+--------------
+React Flow should be the visual centerpiece.
+
+Start:
+            Topic
+           /  |  \
+          /   |   \
+     Related Related Related
+
+On node click:
+- expand children
+- animate layout
+- fetch relevant data lazily
+- avoid loading a giant graph all at once
+
+Show article sections in:
+- right-side drawer on desktop
+- bottom sheet on mobile
+
+The graph should remain usable with touch controls.
+
+LIBRARY DESIGN
+--------------
+Simple and visual.
+
+Possible sections:
+- Saved topics
+- Recent explorations
+- Saved rabbit holes
+
+MVP can be just Saved topics + Recent explorations.
+
+IMPORTANT MVP RULES
+-------------------
+Build the smallest polished version first.
+
+MVP acceptance criteria:
+
+SCROLL
+- loads real Wikipedia topics
+- shows image/title/summary
+- vertical scrolling works smoothly
+- Save works
+- Explore opens the selected topic
+
+EXPLORE
+- selected topic appears as center node
+- at least 4–6 meaningful related nodes appear
+- clicking a node can expand or navigate
+- article sections are visible
+- graph looks polished
+
+LIBRARY
+- saved topics persist
+- saved topics render cleanly
+- clicking one reopens Explore
+
+GEMINI
+- used meaningfully to structure or rank content
+- not exposed as a standalone chatbot
+
+ELEVENLABS
+- at least one working narration control
+- narration uses Scroll or Explore content
+
+RESPONSIVENESS
+- works on desktop and mobile
+
+DEPLOYMENT
+- deployed on Vercel
+- no exposed secrets
+
+IMPLEMENTATION ORDER
+--------------------
+1. Scaffold Next.js + TypeScript + Tailwind
+2. Build shared navigation
+3. Create Scroll feed using real Wikipedia data
+4. Make Scroll visually polished
+5. Add Explore route
+6. Add React Flow mindmap
+7. Add Wikipedia/Wikidata related-topic fetching
+8. Add article sections panel
+9. Add Save functionality
+10. Build Library
+11. Add Gemini for structured sections / related-topic ranking
+12. Add ElevenLabs narration button
+13. Add loading/error states
+14. Polish transitions
+15. Test demo flow
+16. Deploy to Vercel
+
+Do not begin with auth, recommendations, or complex backend work.
+
+API / SECURITY RULES
+--------------------
+- Never expose Gemini or ElevenLabs secret keys in client-side code
+- Call them through Next.js server routes / server actions
+- Cache Wikipedia requests where useful
+- Gracefully handle missing images
+- Add timeout/error handling for all external APIs
+- Keep generated data grounded in source content
+- Sanitize anything rendered from external sources
+
+PERFORMANCE
+-----------
+Scroll must feel instant.
+
+Use:
+- image optimization
+- prefetching
+- skeleton cards
+- lazy loading
+- request caching
+- small payloads
+- preloading next feed items
+
+Do not run Gemini synchronously for every card if it creates visible lag.
+
+Prefer:
+- raw Wikipedia summary immediately
+- Gemini enhancement loaded/cached afterward
+or
+- pre-generated/cached enriched cards
+
+NON-GOALS
+---------
+Do NOT build:
+- chatbot
+- voice assistant
+- podcast mode
+- quizzes
+- multiplayer
+- social profiles
+- comments
+- messaging
+- streak systems
+- complex gamification
+- recommendation ML system
+- admin dashboard
+- mobile native app
+- browser extension
+- full Wikipedia replacement
+
+Only build Scroll, Explore, Library.
+
+3-MINUTE DEMO FLOW
+------------------
+Keep the presentation extremely tight.
+
+Suggested flow:
+
+0:00–0:20
+Explain:
+“Wikipedia has incredible information, but discovery is still built like a reference website. Scrollipedia makes it feel native to how people browse today.”
+
+0:20–1:05
+SCROLL
+- swipe several visually interesting topics
+- show fast discovery
+- save one topic
+
+1:05–2:10
+EXPLORE
+- tap Explore
+- show the topic transform into an interactive mindmap
+- click 2–3 related nodes
+- expand a branch
+- open a structured article section
+- optionally trigger ElevenLabs narration briefly
+- mention Gemini structures/ranks the content behind the scenes
+
+2:10–2:40
+LIBRARY
+- show saved topic
+- show recent exploration / saved path
+- reopen it
+
+2:40–3:00
+Close:
+“Scroll to discover. Explore to understand. Library to keep what matters.”
+
+PRODUCT PRINCIPLES
+------------------
+1. Wikipedia remains the source of truth.
+2. AI improves navigation and presentation, not factual authority.
+3. Every extra feature must strengthen Scroll, Explore, or Library.
+4. The interface should explain itself without a tutorial.
+5. Optimize for the live demo first.
+6. Polish beats feature count.
+7. If a feature cannot be demonstrated clearly in the 3-minute pitch, deprioritize it.
+
+CODEX WORKING INSTRUCTIONS
+--------------------------
+When implementing:
+
+- Make reasonable product decisions without repeatedly asking questions.
+- Keep commits / implementation steps small and coherent.
+- Prefer simple, maintainable code over unnecessary abstractions.
+- Preserve the strict 3-feature scope.
+- Use TypeScript everywhere.
+- Build reusable UI components.
+- Keep API credentials in environment variables.
+- Add clear .env.example entries.
+- Provide useful loading and failure states.
+- Use real Wikipedia/Wikidata data as early as possible.
+- Mock APIs only when absolutely necessary to unblock UI work.
+- Prioritize a functioning end-to-end demo over completeness.
+- Do not introduce unrelated frameworks.
+- Do not replace the chosen stack unless there is a strong technical reason.
+- Keep the visual design consistent across all three sections.
+- After each major feature, verify the full path:
+  Scroll -> Explore -> Save -> Library -> Reopen
+
+ENVIRONMENT VARIABLES
+---------------------
+Likely:
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+GEMINI_API_KEY=
+ELEVENLABS_API_KEY=
+
+Exact variable names can be adjusted to match SDK conventions.
+
+FINAL BUILD TARGET
+------------------
+A polished web app where a judge can:
+
+1. Open Scrollipedia
+2. Immediately scroll through interesting Wikipedia topics
+3. Tap Explore on one
+4. See an interactive knowledge mindmap
+5. Dive into related concepts and article sections
+6. Optionally hear content narrated
+7. Save the topic/path
+8. Find it again in Library
+
+The experience should feel complete even though the scope is intentionally narrow.
+
+One-line product description:
+
+“Scrollipedia turns Wikipedia into a modern discovery app: scroll through knowledge, explore it as a mindmap, and save what you learn.”
