@@ -1,0 +1,10 @@
+.git/
+.next/
+node_modules/
+.tools/
+test-results/
+playwright-report/
+blob-report/
+.env*
+!.env.example
+tsconfig.tsbuildinfo
