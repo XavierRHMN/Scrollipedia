@@ -23,4 +23,4 @@ export async function getTopic(title: string): Promise<TopicDetail> {
     return { article, sections: [{ title: 'Overview', content: article.extract }], related: [], organized: false, sourceWarning: 'Wikipedia could not refresh the connections. You can read the summary and retry.' };
   }
 }
-export const getOrganizedTopic = unstable_cache(async (title: string) => organize(await getCompleteTopic(title)), ['organized-topic-v2'], { revalidate: 3600 });
+export const getOrganizedTopic = unstable_cache(async (title: string) => organize(await getCompleteTopic(title)), ['organized-topic-v3'], { revalidate: 3600 });

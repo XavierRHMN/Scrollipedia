@@ -193,6 +193,15 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .empty-state p { margin: 12px 0 20px; line-height: 1.5; color: var(--muted); }
 .empty-state .button { margin-right: 8px; }
 .spin { animation: spin 1s linear infinite; }
+.ai-summary { padding: 12px 24px; border-bottom: 1px solid var(--border); }
+.summary-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--theme); border-radius: 999px; color: var(--theme); background: var(--theme-soft); padding: 7px 12px; font-size: 14px; }
+.ai-summary p { max-width: 760px; margin: 12px 0 8px; font-size: 15px; line-height: 1.6; }
+.summary-retry { color: var(--theme); font-size: 14px; }
+.stats-note { padding: 20px 24px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.stats-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); border-top: 1px solid var(--border); }
+.stats-grid>div { padding: 24px; border-bottom: 1px solid var(--border); }
+.stats-grid dt { color: var(--muted); font-size: 14px; }
+.stats-grid dd { color: var(--theme); font-size: 32px; font-weight: 700; margin-top: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 1220px) { .feed-sidebar { display: none; } }
 @media (min-width: 800px) and (max-width: 1040px) {
@@ -207,7 +216,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
   .app-header { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); width: 100%; max-width: 600px; border: 1px solid var(--border); border-bottom: 0; background: var(--bg); padding-bottom: env(safe-area-inset-bottom,0px); }
   .brand { display: none; }
   .app-header nav { flex-direction: row; justify-content: space-around; align-items: center; gap: 0; height: 58px; }
-  .nav-link { flex: 1; min-width: 0; justify-content: center; gap: 5px; font-size: 12px; border-radius: 0; padding: 10px 6px; min-height: 58px; }
+  .nav-link { flex: 1; min-width: 0; justify-content: center; flex-direction: column; gap: 3px; font-size: 11px; border-radius: 0; padding: 7px 3px; min-height: 58px; }
   .settings-panel { padding: 24px; }
   .settings-heading { margin-bottom: 26px; }
   .nav-link .nav-count { display: none; }
