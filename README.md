@@ -45,7 +45,7 @@ Demo: Scroll → Save → Explore → click two graph topics → Save path → L
 
 ## Vercel
 
-Live app: https://scrollipedia.vercel.app. The `scrollipedia.tech` domain is attached to the Vercel project; its DNS is managed through Namify. The production app has been checked at desktop and mobile widths. Deployments currently use the CLI; automatic deployments on GitHub pushes require connecting the GitHub account in Vercel.
+Live app: https://scrollipedia.tech (also available at https://scrollipedia.vercel.app). DNS is managed through Namify, with HTTPS provided by Vercel. The production app has been checked at desktop and mobile widths. Deployments currently use the CLI; automatic deployments on GitHub pushes require connecting the GitHub account in Vercel.
 
 ```powershell
 npx vercel
