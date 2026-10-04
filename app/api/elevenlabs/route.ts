@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     if (!text) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
     const voice = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
     const model = process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}`, { method: 'POST', headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: `${article.title}. ${text.slice(0,2500)}`, model_id: model }), signal: AbortSignal.timeout(20000) });
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}`, { method: 'POST', headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.slice(0,2500), model_id: model }), signal: AbortSignal.timeout(20000) });
     if (!response.ok) throw new Error('Narration provider unavailable');
     return new Response(await response.arrayBuffer(), { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'private, no-store' } });
   } catch { return NextResponse.json({ error: 'Narration could not be played. Please try again.' }, { status: 502 }); }

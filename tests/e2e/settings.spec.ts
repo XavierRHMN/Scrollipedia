@@ -15,10 +15,10 @@ test('settings theme and source-link choices persist, and the dialog closes with
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog',{name:'Settings',exact:true})).not.toBeVisible();
   await expect(page.getByRole('button',{name:'Settings',exact:true})).toBeFocused();
-  await expect(page.locator('.post-source').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
+  await expect(page.locator('.image-dialog a').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
-  await expect(page.locator('.post-source').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
+  await expect(page.locator('.image-dialog a').first()).toHaveAttribute('href',/^https:\/\/simple.wikipedia.org\//);
   await openSettings(page);
   const bounds = await page.getByRole('dialog',{name:'Settings',exact:true}).boundingBox();
   expect(bounds!.x).toBeGreaterThanOrEqual(0);
