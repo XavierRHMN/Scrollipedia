@@ -17,11 +17,12 @@ test('real discovery → save → explore → path → library → reopen', asyn
   await page.screenshot({ path: `test-results/${info.project.name}-scroll.png`, fullPage: false });
   await first.getByRole('link', { name: 'Explore topic' }).click();
   await expect(page.locator('.center-node strong')).toHaveText('Bioluminescence', { timeout: 30000 });
-  await expect(page.locator('.topic-node')).toHaveCount(7);
+  // Source connections and later Gemini organization accumulate in the map.
+  await expect.poll(()=>page.locator('.topic-node').count()).toBeGreaterThanOrEqual(7);
   await expect(page.getByRole('tabpanel')).toContainText('Bioluminescence');
   await page.screenshot({ path: `test-results/${info.project.name}-explore.png`, fullPage: false });
   const relatedTitle = await page.locator('.related-accessible button').first().innerText();
-  await page.locator('.topic-node').filter({ hasText: relatedTitle }).first().click();
+  await page.getByRole('button', { name: `Explore connections for ${relatedTitle}`, exact: true }).click();
   await expect(page.locator('.center-node strong')).toHaveText(relatedTitle, { timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Save path', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Save path', exact: true }).click();
