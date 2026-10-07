@@ -306,10 +306,18 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
   .explore-workspace { display: flex; flex-direction: column; height: auto; }
   .graph-canvas { height: clamp(500px,calc(100svh - 310px),620px); min-height: 500px; }
   .graph-caption { padding: 14px 20px 8px; }
+  .graph-controls { gap: 0; margin-inline: 8px; }
+  .graph-controls button { padding: 8px; }
+  .graph-controls button:has(span) { flex-direction: column; gap: 2px; padding: 4px 8px; }
+  .graph-controls span { font-size: 11px; line-height: 13px; }
   .article-panel { border-left: 0; border-top: 1px solid var(--border); padding: 20px 24px; max-height: none; overflow: visible; }
   .mobile-panel-close { display: grid; place-items: center; width: 32px; height: 32px; color: var(--muted); }
   .related-accessible { padding: 16px 24px; }
   .explore-loading { margin: 0; }
 }
+.graph-canvas.graph-fullscreen { position: fixed; inset: 0; z-index: 100; width: 100%; height: 100dvh; min-height: 0; padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px); overscroll-behavior: contain; }
+.graph-fullscreen .graph-caption { position: relative; padding-right: 64px; }
+.graph-fullscreen-close { position: absolute; right: 12px; top: 12px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; color: var(--muted); }
+.graph-fullscreen-close:hover { color: var(--fg); background: var(--hover); }
 @media (max-width: 380px) { .topic-post { padding-inline: 16px; } .post-actions { gap: 10px; } .post-source { display: none; } .nav-link { padding-inline: 8px; } .article-shortcut { padding-inline: 12px; } .article-shortcut .button, .article-shortcut .article-pill { font-size: 12px; padding-inline: 6px; gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none!important; transition: none!important; scroll-behavior: auto!important; } }

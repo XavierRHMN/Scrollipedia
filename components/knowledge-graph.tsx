@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ReactFlow,Background,Handle,Position,BaseEdge,type EdgeProps,type Edge,type NodeProps,type Node,type ReactFlowInstance} from '@xyflow/react';
-import {Plus,Minus,Scan,LocateFixed,LoaderCircle,Check} from 'lucide-react';
+import {Plus,Minus,Scan,LocateFixed,LoaderCircle,Check,Maximize2,Minimize2,X} from 'lucide-react';
 import type {WikiArticle,RelatedTopic} from '@/types';
 import {expandMap,type MindMap} from '@/lib/mind-map';
 type TopicNodeData={title:string;diameter:number;active:boolean;root:boolean;expanded:boolean;loading:boolean;mobile:boolean;select:(keyboard:boolean)=>void;cancelTap:()=>void};
@@ -23,19 +23,60 @@ export function KnowledgeGraph({article,related,onSelect,loading,complete=true}:
   const root=useRef(String(article.pageId));
   const [map,setMap]=useState<MindMap>(()=>expandMap({topics:[],links:[]},article,related,!loading&&complete));
   const [mobile,setMobile]=useState(false);
+  const [fullscreen,setFullscreen]=useState(false);
+  const canvas=useRef<HTMLElement>(null), fullscreenButton=useRef<HTMLButtonElement>(null), closeButton=useRef<HTMLButtonElement>(null);
+  const normalViewport=useRef<{x:number;y:number;zoom:number} | null>(null);
+  const pageScroll=useRef(0);
   const lastTap=useRef<{id:string;time:number} | null>(null);
   const cancelTap=useCallback(()=>{lastTap.current=null;},[]);
   const selectTopic=useCallback((id:string,title:string,keyboard:boolean)=>{
-    if(!mobile || keyboard){cancelTap();onSelect(title);return;}
+    if(!(mobile || fullscreen) || keyboard){cancelTap();onSelect(title);return;}
     const now=performance.now(), previous=lastTap.current;
     if(previous?.id===id && now-previous.time<=400){cancelTap();onSelect(title);}
     else lastTap.current={id,time:now};
-  },[mobile,onSelect,cancelTap]);
+  },[mobile,fullscreen,onSelect,cancelTap]);
   const flow=useRef<ReactFlowInstance<TopicFlowNode,CircleFlowEdge> | null>(null);
+  useEffect(()=>{
+    if(!fullscreen)return;
+    cancelTap();
+    const scrollY=pageScroll.current, body=document.body;
+    const previous={position:body.style.position,top:body.style.top,width:body.style.width,overflow:body.style.overflow};
+    Object.assign(body.style,{position:'fixed',top:`-${scrollY}px`,width:'100%',overflow:'hidden'});
+    // Keep the existing map mounted while making the rest of the page inert.
+    const background:HTMLElement[]=[];
+    let element:HTMLElement | null=canvas.current;
+    while(element && element!==body){
+      for(const sibling of element.parentElement?.children ?? [])if(sibling!==element && sibling instanceof HTMLElement && !sibling.inert){sibling.inert=true;background.push(sibling);}
+      element=element.parentElement;
+    }
+    closeButton.current?.focus({preventScroll:true});
+    function keydown(event:KeyboardEvent){
+      if(event.key==='Escape'){event.preventDefault();setFullscreen(false);}
+      if(event.key!=='Tab')return;
+      const buttons=Array.from(canvas.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
+      const first=buttons[0], last=buttons[buttons.length-1];
+      if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}
+      else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}
+    }
+    document.addEventListener('keydown',keydown);
+    return()=>{
+      document.removeEventListener('keydown',keydown);
+      background.forEach(element=>{element.inert=false;});
+      Object.assign(body.style,previous);window.scrollTo(0,scrollY);
+      fullscreenButton.current?.focus({preventScroll:true});
+    };
+  },[fullscreen,cancelTap]);
+  useEffect(()=>{
+    const timer=setTimeout(()=>{
+      if(fullscreen)void flow.current?.fitView({padding:0.12,maxZoom:1.15,duration:0});
+      else if(normalViewport.current){void flow.current?.setViewport(normalViewport.current,{duration:0});normalViewport.current=null;}
+    },100);
+    return()=>clearTimeout(timer);
+  },[fullscreen]);
   const active=String(article.pageId), lastFocus=useRef('');
   useEffect(()=>{const media=matchMedia('(max-width: 799px)');const update=()=>setMobile(media.matches);update();media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
   useEffect(()=>{setMap(previous=>expandMap(previous,article,related,!loading&&complete));},[article,related,loading,complete]);
-  const nodes=useMemo<TopicFlowNode[]>(()=>map.topics.map(t=>({id:t.id,type:'topic',position:t.position,origin:[0.5,0.5],width:t.diameter,height:t.diameter,draggable:false,data:{title:t.article.title,diameter:t.diameter,active:t.id===active,root:t.id===root.current,expanded:t.expanded,loading:t.article.title===loading,mobile,select:(keyboard:boolean)=>selectTopic(t.id,t.article.title,keyboard),cancelTap}})),[map.topics,active,loading,mobile,selectTopic,cancelTap]);
+  const nodes=useMemo<TopicFlowNode[]>(()=>map.topics.map(t=>({id:t.id,type:'topic',position:t.position,origin:[0.5,0.5],width:t.diameter,height:t.diameter,draggable:false,data:{title:t.article.title,diameter:t.diameter,active:t.id===active,root:t.id===root.current,expanded:t.expanded,loading:t.article.title===loading,mobile:mobile || fullscreen,select:(keyboard:boolean)=>selectTopic(t.id,t.article.title,keyboard),cancelTap}})),[map.topics,active,loading,mobile,fullscreen,selectTopic,cancelTap]);
   const edges=useMemo<CircleFlowEdge[]>(()=>{
     const radii=new Map(map.topics.map(t=>[t.id,t.diameter/2]));
     return map.links.map(e=>({...e,type:'circle',data:{sourceRadius:radii.get(e.source)!,targetRadius:radii.get(e.target)!},style:{stroke:e.source===active||e.target===active ? 'var(--theme)' : 'var(--border)',strokeWidth:e.source===active||e.target===active ? 2 : 1.5}}));
@@ -52,5 +93,6 @@ export function KnowledgeGraph({article,related,onSelect,loading,complete=true}:
     return()=>clearTimeout(timer);
   },[active,related,loading,mobile,map.topics.length]);
   function focus(){const node=map.topics.find(t=>t.id===active);if(node) void flow.current?.setCenter(node.position.x,node.position.y,{zoom:1,duration:300});}
-  return <section className="graph-canvas" aria-label="Expanding knowledge map"><div className="graph-caption"><span className="eyebrow">Mind map · {map.topics.length} topics</span><p>{mobile ? 'Double tap' : 'Click'} a circle to grow a branch. Drag to move around.</p></div><div className="graph-surface"><ReactFlow nodes={nodes} edges={edges} edgeTypes={edgeTypes} nodeTypes={nodeTypes} onNodeClick={(event,node)=>node.data.select(event.detail===0)} onPaneClick={cancelTap} onMoveStart={cancelTap} onInit={instance=>{flow.current=instance;}} fitView fitViewOptions={{padding:0.04,maxZoom:1}} minZoom={0.15} maxZoom={1.8} nodesDraggable={false} nodesConnectable={false} nodesFocusable={false} edgesFocusable={false} elementsSelectable={false} zoomOnDoubleClick={false} zoomOnScroll={!mobile} preventScrolling={!mobile} proOptions={{hideAttribution:true}}><Background color="var(--border)" gap={24} size={1}/></ReactFlow></div><div className="graph-controls" role="group" aria-label="Map controls"><button aria-label="Zoom out" onClick={()=>void flow.current?.zoomOut()}><Minus size={19}/></button><button aria-label="Zoom in" onClick={()=>void flow.current?.zoomIn()}><Plus size={19}/></button><button aria-label="Focus selected topic" onClick={focus}><LocateFixed size={19}/></button><button aria-label="Show entire map" onClick={()=>void flow.current?.fitView({padding:0.1,duration:300})}><Scan size={19}/><span>Overview</span></button></div><div className="graph-status" role="status">{loading ? `Opening connections for ${loading}…` : `${article.title}${!related.length ? ' · No new connections available' : mobile ? ' · Double tap another topic to keep exploring' : ' · Click another topic to keep exploring'}`}</div></section>;
+  function toggleFullscreen(){if(!fullscreen){normalViewport.current=flow.current?.getViewport() ?? null;pageScroll.current=window.scrollY;}setFullscreen(previous=>!previous);}
+  return <section ref={canvas} className={`graph-canvas${fullscreen ? ' graph-fullscreen' : ''}`} role={fullscreen ? 'dialog' : undefined} aria-modal={fullscreen || undefined} aria-label={fullscreen ? 'Fullscreen mind map' : 'Expanding knowledge map'}><div className="graph-caption"><span className="eyebrow">Mind map · {map.topics.length} topics</span><p>{mobile || fullscreen ? 'Double tap' : 'Click'} a circle to grow a branch. Drag to move around.</p>{fullscreen && <button ref={closeButton} className="graph-fullscreen-close" aria-label="Close fullscreen mind map" onClick={()=>setFullscreen(false)}><X size={22}/></button>}</div><div className="graph-surface"><ReactFlow nodes={nodes} edges={edges} edgeTypes={edgeTypes} nodeTypes={nodeTypes} onNodeClick={(event,node)=>node.data.select(event.detail===0)} onPaneClick={cancelTap} onMoveStart={cancelTap} onInit={instance=>{flow.current=instance;}} fitView fitViewOptions={{padding:0.04,maxZoom:1}} minZoom={0.15} maxZoom={1.8} nodesDraggable={false} nodesConnectable={false} nodesFocusable={false} edgesFocusable={false} elementsSelectable={false} zoomOnDoubleClick={false} zoomOnScroll={!mobile} preventScrolling={fullscreen || !mobile} proOptions={{hideAttribution:true}}><Background color="var(--border)" gap={24} size={1}/></ReactFlow></div><div className="graph-controls" role="group" aria-label="Map controls"><button aria-label="Zoom out" onClick={()=>void flow.current?.zoomOut()}><Minus size={19}/></button><button aria-label="Zoom in" onClick={()=>void flow.current?.zoomIn()}><Plus size={19}/></button><button aria-label="Focus selected topic" onClick={focus}><LocateFixed size={19}/></button><button aria-label="Show entire map" onClick={()=>void flow.current?.fitView({padding:0.1,duration:300})}><Scan size={19}/><span>Overview</span></button>{(mobile || fullscreen) && <button ref={fullscreenButton} aria-label={fullscreen ? 'Exit fullscreen' : 'Fullscreen'} aria-pressed={fullscreen} onClick={toggleFullscreen}>{fullscreen ? <Minimize2 size={19}/> : <Maximize2 size={19}/>}<span>{fullscreen ? 'Exit' : 'Fullscreen'}</span></button>}</div><div className="graph-status" role="status">{loading ? `Opening connections for ${loading}…` : `${article.title}${!related.length ? ' · No new connections available' : mobile || fullscreen ? ' · Double tap another topic to keep exploring' : ' · Click another topic to keep exploring'}`}</div></section>;
 }
