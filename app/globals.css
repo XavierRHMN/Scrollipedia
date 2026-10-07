@@ -73,7 +73,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .page-heading span { display: block; font-size: 13px; color: var(--muted); margin-top: 3px; }
 .creator-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .creator-link:hover { color: var(--theme); }
-.start-title .creator-credit { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.start-title .creator-credit { font-size: 14px; color: var(--fg); margin-top: 6px; }
+.start-title .creator-link { color: var(--theme); font-weight: 600; }
 .scroll-page, .library-page { max-width: 600px; min-height: 100dvh; border-inline: 1px solid var(--border); margin: 0 auto; }
 .feed-scroll { width: 100%; }
 .topic-post { padding: 14px 24px 8px; border-bottom: 1px solid var(--border); transition: background .15s; }
