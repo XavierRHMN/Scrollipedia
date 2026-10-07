@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-export type Preferences = { storeData: boolean; englishLinks: boolean; theme: 'auto' | 'light' | 'dark' };
+export type Preferences = { storeData: boolean; englishLinks: boolean; theme: 'auto' | 'light' | 'dark' | 'amoled' };
 const DEFAULTS: Preferences = { storeData: true, englishLinks: true, theme: 'auto' };
 const KEY = 'scrollipedia.settings.v1';
 const Context = createContext<{ preferences: Preferences; ready: boolean; update: (patch: Partial<Preferences>) => void; reset: () => void } | null>(null);
@@ -9,7 +9,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const value = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (value) setPreferences({ storeData: value.storeData !== false, englishLinks: value.englishLinks !== false, theme: ['auto','light','dark'].includes(value.theme) ? value.theme : 'auto' });
+      if (value) setPreferences({ storeData: value.storeData !== false, englishLinks: value.englishLinks !== false, theme: ['auto','light','dark','amoled'].includes(value.theme) ? value.theme : 'auto' });
     } catch { /* Use defaults if preferences cannot be read. */ }
     setReady(true);
   }, []);

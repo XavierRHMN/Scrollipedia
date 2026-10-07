@@ -18,6 +18,7 @@
 }
 :root[data-theme=light] { color-scheme: light; --bg: #fff; --fg: #0f1419; --muted: #536471; --border: #d5dce1; --hover: #f3f5f6; --panel: #f7f9fa; --theme: #148bdb; --theme-soft: #e8f5fe; }
 :root[data-theme=dark] { color-scheme: dark; --bg: #15202b; --fg: #fff; --muted: #9aaab8; --border: #38444d; --hover: #1c2732; --panel: #192734; --theme: #2cafff; --theme-soft: #17374d; }
+:root[data-theme=amoled] { color-scheme: dark; --bg: #000; --fg: #fff; --muted: #aaa; --border: #303030; --hover: #111; --panel: #000; --theme: #2cafff; --theme-soft: #03121c; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; font-size: 16px; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -53,8 +54,9 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .setting-switch span { display: block; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform .15s; }
 .setting-switch[aria-checked=true] { background: var(--theme); }
 .setting-switch[aria-checked=true] span { transform: translateX(24px); }
-.theme-options { display: flex; background: var(--border); border-radius: 999px; padding: 3px; }
-.theme-options button { padding: 6px 10px; font-size: 14px; font-weight: 600; border-radius: 999px; }
+.theme-setting { flex-wrap: wrap; gap: 12px; }
+.theme-options { display: flex; max-width: 100%; background: var(--border); border-radius: 999px; padding: 3px; }
+.theme-options button { padding: 6px 8px; min-height: 40px; font-size: 14px; font-weight: 600; border-radius: 999px; }
 .theme-options button[aria-checked=true] { background: var(--theme-soft); color: var(--theme); }
 .settings-about { padding: 20px 0; }
 .settings-about h3 { font-size: 18px; font-weight: 600; }
