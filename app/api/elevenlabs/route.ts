@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getTopic } from '@/lib/topic';
 import { validTitle, allowPaidRequest } from '@/lib/api';
 import { articles, knownArticle } from '@/lib/wikipedia';
-import {DEFAULT_LANGUAGE,isLanguage} from '@/lib/languages';
+import {DEFAULT_LANGUAGE,LANGUAGES,isLanguage} from '@/lib/languages';
 export async function GET() {
   return NextResponse.json({ available: !!process.env.ELEVENLABS_API_KEY && process.env.INTEGRATIONS_ENABLED !== 'false' }, { headers: { 'Cache-Control': 'no-store' } });
 }
@@ -19,7 +19,9 @@ export async function POST(request: Request) {
     const text = section === undefined ? shortRead(article.feedSummary || article.extract,45,language) : topic?.sections[section]?.content;
     if (!text) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
     const voice = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
-    const model = process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
+    const locale=LANGUAGES[language];
+    // Bengali needs v3; the existing Flash model does not support it.
+    const model = ('narrationModel' in locale ? process.env[`ELEVENLABS_MODEL_${language.toUpperCase()}`] || locale.narrationModel : process.env.ELEVENLABS_MODEL) || 'eleven_flash_v2_5';
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}`, { method: 'POST', headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.slice(0,2500), model_id: model }), signal: AbortSignal.timeout(20000) });
     if (!response.ok) throw new Error('Narration provider unavailable');
     return new Response(await response.arrayBuffer(), { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'private, no-store' } });

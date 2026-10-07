@@ -3,6 +3,7 @@
 export const LANGUAGES={
   en:{name:'English',nativeName:'English',direction:'ltr',wikipediaHost:'en.wikipedia.org',wikidataSite:'enwiki',overview:'Overview',defaultTopic:'Bioluminescence',summaryLanguage:'simple everyday English',anchors:{Nature:'Ecology',Science:'Science',Animals:'Animal',History:'History',Places:'Geography',Culture:'Culture',Art:'Art',Mathematics:'Mathematics',Games:'Game',Technology:'Technology',Music:'Music',Space:'Astronomy'}},
   ar:{name:'Arabic',nativeName:'العربية',direction:'rtl',wikipediaHost:'ar.wikipedia.org',wikidataSite:'arwiki',overview:'نظرة عامة',defaultTopic:'ضيائية حيوية',summaryLanguage:'clear, simple Modern Standard Arabic',anchors:{Nature:'علم البيئة',Science:'علم',Animals:'حيوان',History:'تاريخ',Places:'جغرافيا',Culture:'ثقافة',Art:'فن',Mathematics:'رياضيات',Games:'لعبة',Technology:'تقنية',Music:'موسيقى',Space:'علم الفلك'}},
+  bn:{name:'Bangla',nativeName:'বাংলা',direction:'ltr',wikipediaHost:'bn.wikipedia.org',wikidataSite:'bnwiki',overview:'সারসংক্ষেপ',defaultTopic:'সালোকসংশ্লেষণ',summaryLanguage:'clear, simple everyday Bengali (Bangla)',narrationModel:'eleven_v3',anchors:{Nature:'বাস্তুবিজ্ঞান',Science:'বিজ্ঞান',Animals:'প্রাণী',History:'ইতিহাস',Places:'ভূগোল',Culture:'সংস্কৃতি',Art:'শিল্পকলা',Mathematics:'গণিত',Games:'খেলা',Technology:'প্রযুক্তি',Music:'সঙ্গীত',Space:'জ্যোতির্বিজ্ঞান'}},
 } as const;
 export type Language=keyof typeof LANGUAGES;
 export const DEFAULT_LANGUAGE:Language='en';

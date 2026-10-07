@@ -1,4 +1,5 @@
 import type {Language} from './languages';
+import {bangla} from './messages-bn';
 const arabic={
   'Pull down to refresh':'اسحب لأسفل لتحديث الموجز','Release to refresh':'اترك لتحديث الموجز',
   'Cached articles warning':'ويكيبيديا مشغولة. نعرض مقالات جرى تحميلها مؤخرًا حتى تتاح الخدمة مجددًا.',
@@ -42,7 +43,7 @@ const englishOverrides:Partial<Record<Message,string>>={
   'AI break':'AI recommendations are taking a break. Showing short Wikipedia reads.',
 };
 const english=Object.fromEntries(Object.keys(arabic).map(key=>[key,englishOverrides[key as Message] || key])) as Record<Message,string>;
-export const MESSAGES:Record<Language,Record<Message,string>>={en:english,ar:arabic};
+export const MESSAGES:Record<Language,Record<Message,string>>={en:english,ar:arabic,bn:bangla};
 export function translate(language:Language,message:Message,values:Record<string,string|number>={}){
   return MESSAGES[language][message].replace(/\{(\w+)\}/g,(match,key)=>values[key]===undefined ? match : String(values[key]));
 }

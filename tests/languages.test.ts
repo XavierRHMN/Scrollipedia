@@ -15,6 +15,7 @@ test('registered languages have complete translations and reject arbitrary API h
   }
   for(const value of ['__proto__','https://evil.test','ar.wikipedia.org',null,42])assert.equal(isLanguage(value),false);
   assert.equal(translate('ar','Explore connections for {title}',{title:'تسارع'}),'استكشف روابط تسارع');
+  assert.equal(translate('bn','Explore connections for {title}',{title:'ত্বরণ'}),'ত্বরণ-এর সম্পর্ক অন্বেষণ করুন');
 });
 
 test('cross-language IDs, URLs and client caches remain separate',()=>{
@@ -37,4 +38,13 @@ test('Arabic short reads and negative preferences retain their bounds',()=>{
   assert.equal(validFeedProfile({interests:[],saved:[],explored:[],disliked:['Astronomy']}),true);
   assert.equal(validFeedProfile({interests:[],saved:[],explored:[],disliked:Array(9).fill('Astronomy')}),false);
   assert.equal(validFeedProfile({interests:[],saved:[],explored:[],disliked:['bad|title']}),false);
+});
+
+test('Bangla article identity, routes and sentence boundaries use the registered language',()=>{
+  const article={pageId:1,title:'ত্বরণ',extract:'ত্বরণ হলো বেগের পরিবর্তন। সময়ের সঙ্গে বেগ বদলায়। এটি তৃতীয় বাক্য।',url:'https://bn.wikipedia.org/wiki/ত্বরণ'};
+  assert.equal(articleLanguage(article),'bn');
+  assert.equal(articleKey(article),'bn:1');
+  assert.equal(exploreUrl(article.title,[],'bn'),'/explore/%E0%A6%A4%E0%A7%8D%E0%A6%AC%E0%A6%B0%E0%A6%A3?lang=bn');
+  assert.equal(shortRead(article.extract,45,'bn'),'ত্বরণ হলো বেগের পরিবর্তন। সময়ের সঙ্গে বেগ বদলায়।');
+  assert.ok(shortRead(Array(80).fill('বিষয়').join(' '),45,'bn').split(/\s+/).length<=45);
 });
