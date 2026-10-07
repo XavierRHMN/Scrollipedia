@@ -338,7 +338,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
   .desktop-article-actions { display: none; }
   .start-screen { width: 100%; max-width: 600px; max-height: 100svh; border-radius: 0; border: 0; }
   .start-screen-content { padding: 26px 24px; gap: 16px; }
-  .app-header { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); width: 100%; max-width: 600px; border: 1px solid var(--border); border-bottom: 0; background: var(--bg); padding-bottom: env(safe-area-inset-bottom,0px); }
+  .app-header { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); transition: transform .2s ease; width: 100%; max-width: 600px; border: 0; border-top: 1px solid var(--border); background: var(--bg); padding-bottom: env(safe-area-inset-bottom,0px); }
+  .app-header.mobile-nav-lowered { transform: translate(-50%,calc(100% + 2px)); pointer-events: none; }
   .brand { display: none; }
   .app-header nav { flex-direction: row; justify-content: space-around; align-items: center; gap: 0; height: 58px; }
   .nav-link { flex: 1; min-width: 0; justify-content: center; flex-direction: column; gap: 3px; font-size: 11px; border-radius: 0; padding: 7px 3px; min-height: 58px; }
@@ -346,8 +347,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
   .settings-heading { margin-bottom: 26px; }
   .nav-link .nav-count { display: none; }
   .nav-count { font-size: 11px; padding: 1px 5px; margin-left: 0; }
-  .scroll-page, .library-page { padding-bottom: calc(72px + env(safe-area-inset-bottom,0px)); }
-  .explore-page { margin: 0 auto; border-inline: 1px solid var(--border); max-width: 600px; padding-bottom: calc(72px + env(safe-area-inset-bottom,0px)); }
+  .scroll-page, .library-page { border-inline: 0; padding-bottom: calc(72px + env(safe-area-inset-bottom,0px)); }
+  .explore-page { margin: 0 auto; border-inline: 0; max-width: 600px; padding-bottom: calc(72px + env(safe-area-inset-bottom,0px)); }
   .explore-toolbar { padding: 16px 20px; flex-wrap: wrap; }
   .toolbar-actions { gap: 8px; }
   .explore-toolbar h1 { font-size: 20px; }
