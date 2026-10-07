@@ -161,7 +161,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .graph-caption { padding: 16px 24px 10px; flex-shrink: 0; }
 .graph-caption p { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
 .graph-surface { flex: 1; min-height: 0; overflow: hidden; }
-.topic-node { border: 1.5px solid var(--border); background: var(--panel); color: var(--fg); border-radius: 50%; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 4px 16px #0000000c; }
+.topic-node { touch-action: manipulation; border: 1.5px solid var(--border); background: var(--panel); color: var(--fg); border-radius: 50%; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 4px 16px #0000000c; }
 .topic-node:hover { border-color: var(--theme); background: var(--hover); }
 .topic-node:focus-visible { outline: 3px solid var(--theme); outline-offset: 5px; }
 .topic-node strong { display: block; width: 64%; flex-shrink: 0; font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; text-align: center; }

@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {exploreCircle} from './map-interaction';
 const article=(id:number,title:string)=>({pageId:id,title,extract:`${title} is a topic from Wikipedia.`,url:`https://en.wikipedia.org/wiki/${title}`});
 const root=article(1,'Acceleration'), branch=article(2,'Physical quantity'), sibling=article(3,'Velocity'), leaf=article(4,'Measurement');
 test.beforeEach(async({page})=>{
@@ -10,37 +11,89 @@ test.beforeEach(async({page})=>{
     return route.fulfill({json:{article:a,sections:[{title:'Overview',content:a.extract}],related:related.map(a=>({...a,reason:'Linked article'})),organized:false}});
   });
 });
-test('tapping a circle grows the map without navigating or moving earlier circles',async({page})=>{
+test('exploring a circle grows the map without navigating or moving earlier circles',async({page,isMobile})=>{
   await page.goto('/explore/Acceleration');
   const node=page.getByRole('button',{name:'Explore connections for Physical quantity',exact:true});
   await expect(node).toBeVisible();
   const initial=await page.locator('.react-flow__node[data-id="1"]').getAttribute('style');
-  await node.click();
+  await page.waitForTimeout(500); // Let the initial fit animation finish before the touch gesture.
+  await exploreCircle(node,isMobile);
   await expect(page.getByRole('button',{name:'Explore connections for Measurement',exact:true})).toBeAttached();
   await expect(page.locator('.topic-node')).toHaveCount(4);
   await expect(page.locator('.center-node strong')).toHaveText('Physical quantity');
   expect(page.url()).toMatch(/\/explore\/Acceleration$/);
   expect(await page.locator('.react-flow__node[data-id="1"]').getAttribute('style')).toBe(initial);
   await page.getByRole('button',{name:'Show entire map'}).click();
-  await page.getByRole('button',{name:'Explore connections for Acceleration',exact:true}).click();
+  await page.waitForTimeout(350);
+  await exploreCircle(page.getByRole('button',{name:'Explore connections for Acceleration',exact:true}),isMobile);
   await expect(page.locator('.center-node strong')).toHaveText('Acceleration');
   await expect(page.locator('.topic-node')).toHaveCount(4);
   const shape=await node.evaluate(el=>({width:getComputedStyle(el).width,height:getComputedStyle(el).height,radius:getComputedStyle(el).borderRadius}));
   expect(shape.width).toBe(shape.height);expect(shape.radius).toBe('50%');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
-test('failed branch leaves the map readable and retry adds its connections',async({page})=>{
+test('failed branch leaves the map readable and retry adds its connections',async({page,isMobile})=>{
   await page.goto('/explore/Acceleration');
   await expect(page.locator('.topic-node')).toHaveCount(3);
   let fail=true;
   await page.route('**/api/wikipedia?title=Physical%20quantity',route=>fail ? route.fulfill({status:503,json:{error:'Busy'}}) : route.fallback());
-  await page.getByRole('button',{name:'Explore connections for Physical quantity',exact:true}).click();
+  await page.waitForTimeout(500);
+  await exploreCircle(page.getByRole('button',{name:'Explore connections for Physical quantity',exact:true}),isMobile);
   await expect(page.locator('.topic-notice')).toContainText('retry');
   await expect(page.locator('.topic-node')).toHaveCount(3);
   fail=false;
   await page.getByRole('button',{name:'Retry connections'}).click();
   await expect(page.locator('.topic-node')).toHaveCount(4);
   await expect(page.locator('.topic-notice')).toHaveCount(0);
+});
+
+test('phone circles require two quick taps on the same topic',async({page,isMobile})=>{
+  test.skip(!isMobile,'Touch interaction is specific to the phone layout.');
+  await page.goto('/explore/Acceleration');
+  await expect(page.locator('.graph-caption')).toContainText('Double tap a circle');
+  const branchNode=page.getByRole('button',{name:'Explore connections for Physical quantity',exact:true});
+  const rootNode=page.getByRole('button',{name:'Explore connections for Acceleration',exact:true});
+  await expect(branchNode).toBeVisible();
+  await page.waitForTimeout(500);
+  let branchRequests=0;
+  page.on('request',request=>{if(new URL(request.url()).searchParams.get('title')==='Physical quantity')branchRequests++;});
+
+  await branchNode.tap();
+  await expect(page.locator('.center-node strong')).toHaveText('Acceleration');
+  expect(branchRequests).toBe(0);
+  await page.waitForTimeout(450);
+  await branchNode.tap(); // A slow second tap starts a new pair.
+  await expect(page.locator('.center-node strong')).toHaveText('Acceleration');
+  expect(branchRequests).toBe(0);
+  await rootNode.tap(); // A different topic also breaks the pair.
+  await branchNode.tap();
+  await expect(page.locator('.center-node strong')).toHaveText('Acceleration');
+  expect(branchRequests).toBe(0);
+  await branchNode.tap();
+  await expect(page.locator('.center-node strong')).toHaveText('Physical quantity');
+  await expect(page.locator('.topic-node')).toHaveCount(4);
+  expect(branchRequests).toBe(1);
+});
+
+test('phone circles ignore a swipe and remain keyboard accessible',async({page,isMobile})=>{
+  test.skip(!isMobile,'Touch interaction is specific to the phone layout.');
+  await page.goto('/explore/Acceleration');
+  const node=page.getByRole('button',{name:'Explore connections for Physical quantity',exact:true});
+  await expect(node).toBeVisible();
+  await page.waitForTimeout(500);
+  await node.tap();
+  const bounds=(await node.boundingBox())!;
+  const touch=await page.context().newCDPSession(page);
+  const point={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...point,x:point.x+30}]});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await touch.detach();
+  await node.tap();
+  await expect(page.locator('.center-node strong')).toHaveText('Acceleration');
+  await node.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.center-node strong')).toHaveText('Physical quantity');
 });
 
 test('variable circles show complete long and unbroken titles inside their boundaries',async({page},testInfo)=>{

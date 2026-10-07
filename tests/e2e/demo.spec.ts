@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { seedFeed } from './fixtures';
+import { exploreCircle } from './map-interaction';
 test.beforeEach(async ({page,request}) => { await seedFeed(page,request); });
-test('real discovery → save → explore → path → library → reopen', async ({ page }, info) => {
+test('real discovery → save → explore → path → library → reopen', async ({ page, isMobile }, info) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/scroll');
@@ -22,7 +23,7 @@ test('real discovery → save → explore → path → library → reopen', asyn
   await expect(page.getByRole('tabpanel')).toContainText('Bioluminescence');
   await page.screenshot({ path: `test-results/${info.project.name}-explore.png`, fullPage: false });
   const relatedTitle = await page.locator('.related-accessible button').first().innerText();
-  await page.getByRole('button', { name: `Explore connections for ${relatedTitle}`, exact: true }).click();
+  await exploreCircle(page.getByRole('button', { name: `Explore connections for ${relatedTitle}`, exact: true }),isMobile);
   await expect(page.locator('.center-node strong')).toHaveText(relatedTitle, { timeout: 30000 });
   await expect(page.getByRole('button', { name: 'Save path', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Save path', exact: true }).click();
