@@ -30,5 +30,5 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 export function useSettings() { const value = useContext(Context); if (!value) throw new Error('Missing settings provider'); return value; }
 export function useWikipediaLink() {
   const { preferences } = useSettings();
-  return (article: { title: string; url: string }) => preferences.englishLinks ? article.url : `https://simple.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ','_'))}`;
+  return (article: { title: string; url: string; simpleUrl?:string }) => preferences.englishLinks ? article.url : article.simpleUrl || `https://simple.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ','_'))}`;
 }

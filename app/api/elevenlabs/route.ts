@@ -1,3 +1,4 @@
+import {shortRead} from '@/lib/short-read';
 import { NextResponse } from 'next/server';
 import { getTopic } from '@/lib/topic';
 import { validTitle, allowPaidRequest } from '@/lib/api';
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
     const topic = section === undefined ? null : await getTopic(title);
     const article = topic?.article || knownArticle(title) || (await articles([title]))[0];
     if (!article) return NextResponse.json({error:'Article not found'}, {status:404});
-    const text = section === undefined ? article.extract : topic?.sections[section]?.content;
+    const text = section === undefined ? shortRead(article.feedSummary || article.extract) : topic?.sections[section]?.content;
     if (!text) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
     const voice = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
     const model = process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';

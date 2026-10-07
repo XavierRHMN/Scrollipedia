@@ -16,6 +16,14 @@ test('simultaneous feed requests share a refill and take distinct batches',async
   const [first,second] = await Promise.all([buffer.take(),buffer.take()]);
   assert.equal(calls,1); assert.ok(second.articles.every(a => !first.articles.some(b=>b.pageId === a.pageId)));
 });
+
+test('a reader refills when a concurrent reader consumes a small batch',async()=>{
+  let calls=0;
+  const buffer=new DiscoveryBuffer(async()=>{const start=calls++*4;await new Promise(resolve=>setTimeout(resolve,5));return batch.slice(start,start+4);});
+  const [first,second]=await Promise.all([buffer.take(),buffer.take()]);
+  assert.equal(first.articles.length,4);assert.equal(second.articles.length,4);
+  assert.ok(second.articles.every(a=>!first.articles.some(b=>b.pageId===a.pageId)));
+});
 test('rate-limit fallback uses only known articles and excludes articles the reader already saw',async () => {
   let calls = 0;
   const buffer = new DiscoveryBuffer(async () => {if (++calls > 1) throw new Error('429'); return batch;});

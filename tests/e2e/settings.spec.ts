@@ -60,6 +60,7 @@ test('reset preserves saves, while confirmed deletion removes library and prefer
   await page.getByRole('button',{name:'Confirm delete',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Settings',exact:true})).not.toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme','auto');
+  await page.getByRole('button',{name:'I’m an adult, continue',exact:true}).click();
   await expect(page.locator('.topic-post').first().getByRole('button',{name:'Save',exact:true})).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('scrollipedia.library.v1'))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem('scrollipedia.settings.v1'))).toBeNull();

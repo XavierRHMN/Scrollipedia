@@ -9,7 +9,7 @@ export class DiscoveryBuffer {
   private history = new Map<number,{article: WikiArticle; at: number}>();
   private pending: Promise<void> | null = null;
   constructor(private fetchBatch: () => Promise<WikiArticle[]>, private now = Date.now) {}
-  async take(exclude: number[] = []) {
+  async take(exclude: number[] = [], refillAttempt=0):Promise<{articles:WikiArticle[];sourceWarning?:string}> {
     const seen = new Set(exclude);
     for (const [id,entry] of this.history) if (this.now()-entry.at > 3600000) this.history.delete(id);
     this.unused = this.unused.filter(a => this.history.has(a.pageId));
@@ -31,6 +31,9 @@ export class DiscoveryBuffer {
       }
     }
     const selected = this.unused.filter(a => !seen.has(a.pageId)).slice(0,6);
+    // Another concurrent reader may consume a small shared batch first.
+    // Refill once instead of failing that reader's first page.
+    if (!selected.length && refillAttempt===0) return this.take(exclude,1);
     if (!selected.length) throw new Error('No discovery articles were available');
     const ids = new Set(selected.map(a => a.pageId));
     this.unused = this.unused.filter(a => !ids.has(a.pageId));

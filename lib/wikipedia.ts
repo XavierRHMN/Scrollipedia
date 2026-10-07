@@ -14,6 +14,10 @@ export async function wikiQuery<T>(params: Record<string, string>): Promise<T> {
 const knownArticles = new Map<string, WikiArticle>();
 const titleKey = (title: string) => title.replaceAll('_',' ').trim().toLocaleLowerCase('en');
 export function knownArticle(title: string) { return knownArticles.get(titleKey(title)); }
+export function rememberFeedArticle(article:WikiArticle) {
+  knownArticles.set(titleKey(article.title),article);
+  if(knownArticles.size>250) knownArticles.delete(knownArticles.keys().next().value!);
+}
 export function toArticle(page: Page): WikiArticle {
   const article = { pageId: page.pageid, title: page.title, extract: page.extract || '', thumbnail: page.thumbnail?.source || page.original?.source, originalImage: page.original?.source, description: page.description, url: page.fullurl || `https://en.wikipedia.org/wiki/${encodeURIComponent(page.title.replaceAll(' ', '_'))}`, wikidataId: page.pageprops?.wikibase_item };
   if (article.extract) { knownArticles.set(titleKey(article.title),article); if (knownArticles.size > 250) knownArticles.delete(knownArticles.keys().next().value!); }
@@ -46,13 +50,15 @@ export async function sections(title: string): Promise<ArticleSection[]> {
   if (current.content) output.push(current);
   return output.filter(s => !/References|External links|Further reading|See also|Notes|Bibliography/i.test(s.title)).slice(0, 8);
 }
-const discovery = new DiscoveryBuffer(async () => {
-  const random = await wikiQuery<{ query: { pages: Page[] } }>({ generator: 'random', grnnamespace: '0', grnlimit: '16', grnminsize: '3000', grnfilterredir: 'nonredirects', prop: 'extracts|pageimages|info|description|pageprops', exintro: '1', explaintext: '1', exsentences: '3', exlimit: 'max', piprop: 'thumbnail|original', pithumbsize: '960', inprop: 'url' });
+async function discoveryBatch(attempt=0):Promise<WikiArticle[]> {
+  const random = await wikiQuery<{ query: { pages: Page[] } }>({ generator: 'random', grnnamespace: '0', grnlimit: '32', grnminsize: '3000', grnfilterredir: 'nonredirects', prop: 'extracts|pageimages|info|description|pageprops', exintro: '1', explaintext: '1', exsentences: '3', exlimit: 'max', piprop: 'thumbnail|original', pithumbsize: '960', inprop: 'url' });
   const candidates = random.query.pages.filter(p => p.extract && p.extract.length >= 100 && (p.thumbnail?.source || p.original?.source) && !p.missing && !Object.hasOwn(p.pageprops || {},'disambiguation') && !/^(List of|Index of|Outline of)/i.test(p.title));
   const selected = candidates.map(toArticle);
+  if (!selected.length && attempt===0) return discoveryBatch(1);
   if (!selected.length) throw new Error('No discovery articles were available');
   return selected;
-});
+}
+const discovery = new DiscoveryBuffer(()=>discoveryBatch());
 export async function feed(offset: number, exclude: number[] = []) {
   const result = await discovery.take(exclude);
   return { ...result, next: offset + result.articles.length };

@@ -1,7 +1,26 @@
 import { NextResponse } from 'next/server';
 import { feed, articles } from '@/lib/wikipedia';
 import { getTopic } from '@/lib/topic';
-import { validTitle, apiError } from '@/lib/api';
+import { validTitle, apiError, allowPaidRequest } from '@/lib/api';
+import {hasSameOrigin} from '@/lib/origin';
+import {validFeedProfile} from '@/lib/feed-profile';
+import {personalizedFeed} from '@/lib/personalized-feed';
+export async function POST(request:Request) {
+  if(!hasSameOrigin(request)) return NextResponse.json({error:'Invalid request origin'},{status:403});
+  const params=new URL(request.url).searchParams;
+  const offset=Number(params.get('offset') || 0), rawExclude=params.get('exclude') || '';
+  if(!Number.isInteger(offset) || offset<0 || offset>10000 || (rawExclude && !/^\d+(,\d+)*$/.test(rawExclude))) return NextResponse.json({error:'Invalid feed request'},{status:400});
+  const exclude=rawExclude ? rawExclude.split(',').map(Number) : [];
+  if(exclude.length>200 || exclude.some(id=>!Number.isSafeInteger(id)||id<=0)) return NextResponse.json({error:'Invalid article IDs'},{status:400});
+  try {
+    const {profile,aiFeed}=await request.json();
+    if(!validFeedProfile(profile) || typeof aiFeed!=='boolean') return NextResponse.json({error:'Invalid feed preferences'},{status:400});
+    const canUseAi=aiFeed && allowPaidRequest(request);
+    const result=await personalizedFeed(offset,exclude,profile,canUseAi);
+    if(aiFeed && !canUseAi) result.sourceWarning='AI recommendations are taking a break. Showing short Wikipedia reads.';
+    return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
+  } catch(error) {return apiError(error);}
+}
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   try {
