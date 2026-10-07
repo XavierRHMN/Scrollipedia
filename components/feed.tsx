@@ -22,7 +22,7 @@ export function Feed() {
     busy.current = true; setLoading(true); setError('');
     const controller = new AbortController(); abort.current = controller;
     try {
-      const response = await fetch(`/api/wikipedia?offset=${offset.current}${seen.current.length ? `&exclude=${seen.current.slice(-200).join(',')}` : ''}`, { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiFeed:profileRef.current.preferences.aiFeed,profile:{interests:profileRef.current.preferences.interests,saved:profileRef.current.saved.slice(0,8).map(a=>a.title.slice(0,100)),explored:profileRef.current.recent.slice(0,8).map(a=>a.title.slice(0,100))}}), signal: controller.signal, cache: 'no-store' });
+      const response = await fetch(`/api/wikipedia?offset=${offset.current}${seen.current.length ? `&exclude=${seen.current.slice(-200).join(',')}` : ''}`, { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:{interests:profileRef.current.preferences.interests,saved:profileRef.current.saved.slice(0,8).map(a=>a.title.slice(0,100)),explored:profileRef.current.recent.slice(0,8).map(a=>a.title.slice(0,100))}}), signal: controller.signal, cache: 'no-store' });
       if (!response.ok) {
         const failure = await response.json().catch(() => ({}));
         if (response.status === 429) { const delay = Number(failure.retryAfter || response.headers.get('retry-after') || 5); setRetryUntil(Date.now()+(Number.isFinite(delay) ? delay : 5)*1000); }

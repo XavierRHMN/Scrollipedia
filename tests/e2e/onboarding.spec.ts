@@ -9,6 +9,9 @@ test('welcome lets readers choose categories and a custom interest before reques
   await page.goto('/scroll');
   const welcome=page.getByRole('dialog',{name:'Scrollipedia',exact:true});
   await expect(welcome).toBeVisible();
+  await expect(welcome.locator('.start-warning')).toContainText('Some topics may be NSFW.');
+  await expect(welcome.getByRole('link',{name:'Xikipedia',exact:true})).toHaveCount(0);
+  await expect(welcome.getByRole('checkbox',{name:/Gemini/})).toHaveCount(0);
   expect(profiles).toHaveLength(0);
   await welcome.getByRole('checkbox',{name:'Space',exact:true}).check();
   await welcome.getByRole('textbox',{name:'Custom interest'}).fill('Black holes');
@@ -17,7 +20,8 @@ test('welcome lets readers choose categories and a custom interest before reques
   await welcome.getByRole('button',{name:'I’m an adult, continue',exact:true}).click();
   await expect(welcome).not.toBeVisible();
   await expect(page.locator('.post-summary').first()).toHaveText('A black hole is a place where gravity is so strong that light cannot escape.');
-  expect(profiles[0]).toMatchObject({aiFeed:true,profile:{interests:['Space','Black holes']}});
+  expect(profiles[0]).toMatchObject({profile:{interests:['Space','Black holes']}});
+  expect(profiles[0]).not.toHaveProperty('aiFeed');
   await page.reload();
   await expect(page.locator('.post-summary').first()).toBeVisible();
   await expect(welcome).not.toBeVisible();
@@ -33,8 +37,11 @@ test('saved and explored topics guide later batches and interests can be edited 
   await page.route('**/api/wikipedia?offset=*',route=>{profiles.push(route.request().postDataJSON());return route.fulfill({json:{articles:[],next:6}});});
   await page.goto('/scroll');
   await expect.poll(()=>profiles.length).toBeGreaterThan(0);
-  expect(profiles[0]).toMatchObject({aiFeed:false,profile:{interests:['Nature'],saved:['Octopus'],explored:['Coral reef']}});
+  expect(profiles[0]).toMatchObject({profile:{interests:['Nature'],saved:['Octopus'],explored:['Coral reef']}});
+  expect(profiles[0]).not.toHaveProperty('aiFeed');
+  await expect.poll(()=>page.evaluate(()=>Object.hasOwn(JSON.parse(localStorage.getItem('scrollipedia.discovery.v1') || '{}'),'aiFeed'))).toBe(false);
   await page.getByRole('button',{name:'Settings',exact:true}).click();
+  await expect(page.getByRole('switch',{name:'Gemini feed',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Choose interests',exact:true}).click();
   await expect(page.getByRole('dialog',{name:'Scrollipedia',exact:true})).toBeVisible();
   await page.getByRole('checkbox',{name:'Science',exact:true}).check();

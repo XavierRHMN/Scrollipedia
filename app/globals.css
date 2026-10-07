@@ -47,6 +47,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .setting-row { margin-bottom: 26px; }
 .setting-label { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .setting-label h3 { font-size: 18px; font-weight: 600; }
+.setting-row>h3 { font-size: 18px; font-weight: 600; }
 .setting-row p, .settings-about p { font-size: 14px; line-height: 1.5; margin-top: 9px; }
 .setting-switch { width: 50px; height: 26px; padding: 3px; border-radius: 999px; flex-shrink: 0; background: var(--muted); }
 .setting-switch span { display: block; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform .15s; }
@@ -229,9 +230,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .custom-picks { display: flex; gap: 8px; flex-wrap: wrap; }
 .custom-picks:empty { display: none; }
 .custom-picks button { display: flex; align-items: center; gap: 8px; background: var(--theme-soft); color: var(--theme); border: 1px solid var(--theme); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
-.start-ai { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.5; cursor: pointer; }
-.start-ai input { accent-color: var(--theme); width: 18px; height: 18px; flex-shrink: 0; }
 .start-screen .start-note { font-size: 13px; }
+.start-screen .start-warning { font-size: 14px; color: var(--fg); padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--theme); border-radius: 8px; background: var(--panel); }
 .start-button { padding: 12px 20px; background: var(--theme); color: #fff; font-weight: 600; border-radius: 999px; min-height: 46px; }
 .settings-interest-link { color: var(--theme); margin-top: 12px; font-size: 14px; }
 .article-shortcut { display: none; padding: 12px 24px; border-bottom: 1px solid var(--border); }

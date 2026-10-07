@@ -13,11 +13,11 @@ export async function POST(request:Request) {
   const exclude=rawExclude ? rawExclude.split(',').map(Number) : [];
   if(exclude.length>200 || exclude.some(id=>!Number.isSafeInteger(id)||id<=0)) return NextResponse.json({error:'Invalid article IDs'},{status:400});
   try {
-    const {profile,aiFeed}=await request.json();
-    if(!validFeedProfile(profile) || typeof aiFeed!=='boolean') return NextResponse.json({error:'Invalid feed preferences'},{status:400});
-    const canUseAi=aiFeed && allowPaidRequest(request);
+    const {profile}=await request.json();
+    if(!validFeedProfile(profile)) return NextResponse.json({error:'Invalid feed preferences'},{status:400});
+    const canUseAi=allowPaidRequest(request);
     const result=await personalizedFeed(offset,exclude,profile,canUseAi);
-    if(aiFeed && !canUseAi) result.sourceWarning='AI recommendations are taking a break. Showing short Wikipedia reads.';
+    if(!canUseAi) result.sourceWarning='AI recommendations are taking a break. Showing short Wikipedia reads.';
     return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
   } catch(error) {return apiError(error);}
 }
