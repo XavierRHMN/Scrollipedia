@@ -79,10 +79,40 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .start-title .creator-link { color: var(--theme); font-weight: 600; }
 .scroll-page, .library-page { max-width: 600px; min-height: 100dvh; border-inline: 1px solid var(--border); margin: 0 auto; }
 .feed-scroll { width: 100%; }
+.feed-pull-refresh { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 13px; overflow: hidden; }
+.feed-pull-refresh svg { transition: transform .15s; }
+.feed-pull-refresh .pull-ready { transform: rotate(180deg); color: var(--theme); }
 .topic-post { padding: 14px 24px 8px; border-bottom: 1px solid var(--border); transition: background .15s; }
 .topic-post:hover { background: var(--hover); }
 .topic-post h2 { font-size: 16px; line-height: 1.5; font-weight: 700; margin-bottom: 3px; }
 .topic-post h2 a { color: var(--fg); }
+.post-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; direction: ltr; }
+.post-heading h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.post-options { position: relative; flex-shrink: 0; margin-top: -10px; margin-inline-end: -10px; }
+.post-options-trigger { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); }
+.post-options-trigger:hover, .post-options-trigger[aria-expanded=true] { background: var(--hover); color: var(--theme); }
+.post-options-menu { position: absolute; inset-inline-end: 0; top: 40px; z-index: 40; min-width: 180px; max-width: calc(100vw - 40px); padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); box-shadow: 0 6px 24px #0003; }
+.post-options-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 8px; font-size: 14px; text-align: start; }
+.post-options-menu button:hover { background: var(--hover); }
+.feed-dismiss-notice { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 45; width: min(540px,calc(100vw - 32px)); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 6px 24px #0002; font-size: 13px; line-height: 1.5; }
+.feed-dismiss-notice button { min-height: 44px; padding: 8px; color: var(--theme); flex-shrink: 0; }
+.language-setting { flex-wrap: wrap; }
+.language-setting label { font-size: 18px; font-weight: 600; }
+.language-setting select { max-width: 100%; min-height: 44px; padding: 8px 12px; background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; font: inherit; }
+.language-setting select:focus-visible { outline: 2px solid var(--theme); outline-offset: 2px; }
+[dir=rtl] .graph-surface, [dir=rtl] .graph-controls { direction: ltr; }
+[dir=rtl] .topic-node { direction: rtl; }
+[dir=rtl] .settings-dialog { text-align: right; }
+[dir=rtl] .setting-switch[aria-checked=true] span { transform: translateX(-24px); }
+[dir=rtl] .post-heading h2, [dir=rtl] .post-options-menu button { direction: rtl; }
+[dir=rtl] .explore-trail .lucide-chevron-right, [dir=rtl] .stats-topic-list .lucide-chevron-right { transform: rotate(180deg); }
+[dir=rtl] .post-actions .narration { margin-left: 0; margin-right: auto; }
+[dir=rtl] .post-save { margin-right: 0; margin-left: -8px; }
+[dir=rtl] .saved-topic-link { margin-left: 0; margin-right: -6px; }
+[dir=rtl] .saved-path-link { margin-left: 0; margin-right: -4px; }
+[dir=rtl] .graph-fullscreen .graph-caption { padding-right: 20px; padding-left: 64px; }
+[dir=rtl] .graph-fullscreen-close { right: auto; left: 12px; }
+@media (max-width: 799px) { .feed-dismiss-notice { bottom: calc(72px + env(safe-area-inset-bottom,0px)); } }
 .post-summary { font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
 .post-image-button { display: block; max-width: 100%; padding: 0; margin-top: 10px; text-align: left; }
 .post-media { display: block; width: auto; height: auto; max-width: 100%; max-height: 330px; object-fit: contain; border-radius: 16px; border: 1px solid var(--border); background: #fff; }

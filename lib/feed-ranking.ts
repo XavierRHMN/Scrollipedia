@@ -1,7 +1,8 @@
 import type {WikiArticle} from '@/types';
 import {shortRead} from './short-read';
+import {DEFAULT_LANGUAGE,type Language} from './languages';
 // Gemini can select only real candidates; preserve room for fresh discoveries.
-export function applyFeedRanking(output:unknown,candidates:WikiArticle[],discoveryIds:number[]):WikiArticle[] {
+export function applyFeedRanking(output:unknown,candidates:WikiArticle[],discoveryIds:number[],language:Language=DEFAULT_LANGUAGE):WikiArticle[] {
   const entries=Array.isArray(output) ? output : [];
   const pool=new Map(candidates.map(a=>[a.pageId,a]));
   const summaries=new Map<number,string>(), ranked:number[]=[];
@@ -10,7 +11,7 @@ export function applyFeedRanking(output:unknown,candidates:WikiArticle[],discove
     const {pageId,summary}=entry as {pageId:unknown;summary:unknown};
     if(typeof pageId!=='number' || !pool.has(pageId) || ranked.includes(pageId)) continue;
     ranked.push(pageId);
-    if(typeof summary==='string' && summary.trim().length>10 && summary.length<=1000) summaries.set(pageId,shortRead(summary));
+    if(typeof summary==='string' && summary.trim().length>10 && summary.length<=1000) summaries.set(pageId,shortRead(summary,45,language));
   }
   const fresh=new Set(discoveryIds);
   const relevant=(ranked.length ? ranked : [...pool.keys()]).filter((id,i,a)=>!fresh.has(id)&&a.indexOf(id)===i).slice(0,4);

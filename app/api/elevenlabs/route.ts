@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getTopic } from '@/lib/topic';
 import { validTitle, allowPaidRequest } from '@/lib/api';
 import { articles, knownArticle } from '@/lib/wikipedia';
+import {DEFAULT_LANGUAGE,isLanguage} from '@/lib/languages';
 export async function GET() {
   return NextResponse.json({ available: !!process.env.ELEVENLABS_API_KEY && process.env.INTEGRATIONS_ENABLED !== 'false' }, { headers: { 'Cache-Control': 'no-store' } });
 }
@@ -10,12 +11,12 @@ export async function POST(request: Request) {
   if (!process.env.ELEVENLABS_API_KEY || process.env.INTEGRATIONS_ENABLED === 'false') return NextResponse.json({ error: 'Narration is not configured for this app.' }, { status: 503 });
   if (!allowPaidRequest(request)) return NextResponse.json({ error: 'Please wait before playing another narration.' }, { status: 429 });
   try {
-    const { title, section } = await request.json();
-    if (!validTitle(title) || (section !== undefined && (!Number.isInteger(section) || section < 0 || section > 7))) return NextResponse.json({ error: 'Invalid narration request' }, { status: 400 });
-    const topic = section === undefined ? null : await getTopic(title);
-    const article = topic?.article || knownArticle(title) || (await articles([title]))[0];
+    const { title, section,language=DEFAULT_LANGUAGE } = await request.json();
+    if (!validTitle(title) || !isLanguage(language) || (section !== undefined && (!Number.isInteger(section) || section < 0 || section > 7))) return NextResponse.json({ error: 'Invalid narration request' }, { status: 400 });
+    const topic = section === undefined ? null : await getTopic(title,language);
+    const article = topic?.article || knownArticle(title,language) || (await articles([title],language))[0];
     if (!article) return NextResponse.json({error:'Article not found'}, {status:404});
-    const text = section === undefined ? shortRead(article.feedSummary || article.extract) : topic?.sections[section]?.content;
+    const text = section === undefined ? shortRead(article.feedSummary || article.extract,45,language) : topic?.sections[section]?.content;
     if (!text) return NextResponse.json({ error: 'Section not found' }, { status: 404 });
     const voice = process.env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
     const model = process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';

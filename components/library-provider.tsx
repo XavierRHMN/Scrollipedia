@@ -3,12 +3,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { WikiArticle, ExplorationPath } from '@/types';
 import { getSupabase } from '@/lib/supabase';
 import { useSettings } from './settings-provider';
+import {LANGUAGES,DEFAULT_LANGUAGE,articleKey,type Language} from '@/lib/languages';
 type Store = { saved: WikiArticle[]; recent: WikiArticle[]; paths: ExplorationPath[] };
-type LibraryContext = Store & { ready: boolean; notice: string; toggle: (a: WikiArticle) => void; visit: (a: WikiArticle) => void; savePath: (articles: WikiArticle[]) => void; removePath: (id: string) => void; isSaved: (id: number) => boolean; clearData: (keepSession?: boolean) => Promise<void>; resetRecent: () => void };
+type LibraryContext = Store & { ready: boolean; notice: string; toggle: (a: WikiArticle) => void; visit: (a: WikiArticle) => void; savePath: (articles: WikiArticle[]) => void; removePath: (id: string) => void; isSaved: (id: number,language?:Language) => boolean; clearData: (keepSession?: boolean) => Promise<void>; resetRecent: () => void };
 const EMPTY: Store = { saved: [], recent: [], paths: [] };
 const KEY = 'scrollipedia.library.v1';
 const Context = createContext<LibraryContext | null>(null);
-function isArticle(value: unknown): value is WikiArticle { if (!value || typeof value !== 'object') return false; const a = value as WikiArticle; return Number.isInteger(a.pageId) && typeof a.title === 'string' && typeof a.extract === 'string' && typeof a.url === 'string' && a.url.startsWith('https://en.wikipedia.org/'); }
+function isArticle(value: unknown): value is WikiArticle { if (!value || typeof value !== 'object') return false; const a = value as WikiArticle; if(!Number.isInteger(a.pageId) || typeof a.title!=='string' || typeof a.extract!=='string' || typeof a.url!=='string')return false;try{const url=new URL(a.url);return url.protocol==='https:' && Object.values(LANGUAGES).some(l=>l.wikipediaHost===url.hostname);}catch{return false;} }
 export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const { preferences, ready: settingsReady } = useSettings();
   const enabled = useRef(preferences.storeData); enabled.current = preferences.storeData;
@@ -73,9 +74,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     if (!keepSession) { current.current = EMPTY; setStore(EMPTY); }
     setNotice('');
   }
-  const toggle = useCallback((article: WikiArticle) => commit(s => ({ ...s, saved: s.saved.some(a => a.pageId === article.pageId) ? s.saved.filter(a => a.pageId !== article.pageId) : [article, ...s.saved] })), [commit]);
-  const visit = useCallback((article: WikiArticle) => commit(s => ({ ...s, recent: [article, ...s.recent.filter(a => a.pageId !== article.pageId)].slice(0,12) })), [commit]);
+  const toggle = useCallback((article: WikiArticle) => commit(s => ({ ...s, saved: s.saved.some(a => articleKey(a)===articleKey(article)) ? s.saved.filter(a => articleKey(a)!==articleKey(article)) : [article, ...s.saved] })), [commit]);
+  const visit = useCallback((article: WikiArticle) => commit(s => ({ ...s, recent: [article, ...s.recent.filter(a => articleKey(a)!==articleKey(article))].slice(0,12) })), [commit]);
   const savePath = useCallback((articles: WikiArticle[]) => commit(s => ({ ...s, paths: [{ id: crypto.randomUUID(), name: articles.map(a => a.title).join(' → '), articles, savedAt: new Date().toISOString() }, ...s.paths] })), [commit]);
-  return <Context.Provider value={{ ...store, ready, notice, toggle, visit, savePath, clearData, resetRecent: () => commit(s => ({ ...s, recent: [] })), removePath: id => commit(s => ({ ...s, paths: s.paths.filter(p => p.id !== id) })), isSaved: id => store.saved.some(a => a.pageId === id) }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...store, ready, notice, toggle, visit, savePath, clearData, resetRecent: () => commit(s => ({ ...s, recent: [] })), removePath: id => commit(s => ({ ...s, paths: s.paths.filter(p => p.id !== id) })), isSaved: (id,language=DEFAULT_LANGUAGE) => store.saved.some(a => articleKey(a)===`${language}:${id}`) }}>{children}</Context.Provider>;
 }
 export function useLibrary() { const value = useContext(Context); if (!value) throw new Error('Missing library provider'); return value; }

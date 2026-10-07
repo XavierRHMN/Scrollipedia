@@ -1,7 +1,8 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-export type Preferences = { storeData: boolean; englishLinks: boolean; theme: 'auto' | 'light' | 'dark' | 'amoled' };
-const DEFAULTS: Preferences = { storeData: true, englishLinks: true, theme: 'auto' };
+import {DEFAULT_LANGUAGE,LANGUAGES,isLanguage,articleLanguage,type Language} from '@/lib/languages';
+export type Preferences = { storeData: boolean; englishLinks: boolean; language:Language; theme: 'auto' | 'light' | 'dark' | 'amoled' };
+const DEFAULTS: Preferences = { storeData: true, englishLinks: true, language:DEFAULT_LANGUAGE, theme: 'auto' };
 const KEY = 'scrollipedia.settings.v1';
 const Context = createContext<{ preferences: Preferences; ready: boolean; update: (patch: Partial<Preferences>) => void; reset: () => void } | null>(null);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -9,7 +10,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const value = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (value) setPreferences({ storeData: value.storeData !== false, englishLinks: value.englishLinks !== false, theme: ['auto','light','dark','amoled'].includes(value.theme) ? value.theme : 'auto' });
+      if (value) setPreferences({ storeData: value.storeData !== false, englishLinks: value.englishLinks !== false, language:isLanguage(value.language) ? value.language : DEFAULT_LANGUAGE, theme: ['auto','light','dark','amoled'].includes(value.theme) ? value.theme : 'auto' });
     } catch { /* Use defaults if preferences cannot be read. */ }
     setReady(true);
   }, []);
@@ -17,6 +18,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     if (!ready) return;
     document.documentElement.dataset.theme = preferences.theme;
   }, [preferences.theme, ready]);
+  useEffect(()=>{if(ready){document.documentElement.lang=preferences.language;document.documentElement.dir=LANGUAGES[preferences.language].direction;}},[preferences.language,ready]);
   function update(patch: Partial<Preferences>) {
     setPreferences(previous => {
       const next = { ...previous, ...patch };
@@ -30,5 +32,5 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 export function useSettings() { const value = useContext(Context); if (!value) throw new Error('Missing settings provider'); return value; }
 export function useWikipediaLink() {
   const { preferences } = useSettings();
-  return (article: { title: string; url: string; simpleUrl?:string }) => preferences.englishLinks ? article.url : article.simpleUrl || `https://simple.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ','_'))}`;
+  return (article: { title: string; url: string; simpleUrl?:string;language?:Language }) => articleLanguage(article)!=='en' || preferences.englishLinks ? article.url : article.simpleUrl || `https://simple.wikipedia.org/wiki/${encodeURIComponent(article.title.replaceAll(' ','_'))}`;
 }
