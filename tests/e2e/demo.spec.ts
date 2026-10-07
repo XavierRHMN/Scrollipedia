@@ -28,10 +28,10 @@ test('real discovery → save → explore → path → library → reopen', asyn
   await expect(page.getByRole('button', { name: 'Save path', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Save path', exact: true }).click();
   await page.getByRole('navigation').getByRole('link', { name: /Library/ }).click();
-  await expect(page.locator('.library-list .topic-post h2').first()).toHaveText('Bioluminescence');
+  await expect(page.locator('.library-list .saved-topic h2').first()).toHaveText('Bioluminescence');
   await expect(page.locator('.path-card')).toHaveCount(1);
   await page.reload();
-  await expect(page.locator('.library-list .topic-post h2').first()).toHaveText('Bioluminescence');
+  await expect(page.locator('.library-list .saved-topic h2').first()).toHaveText('Bioluminescence');
   await page.screenshot({ path: `test-results/${info.project.name}-library.png`, fullPage: false });
   await page.getByRole('link', { name: 'Reopen 2-topic path' }).click();
   await expect(page.locator('.center-node strong')).toHaveText(relatedTitle, { timeout: 30000 });
