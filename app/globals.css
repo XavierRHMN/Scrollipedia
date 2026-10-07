@@ -234,7 +234,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
 .start-screen .start-note { font-size: 13px; }
 .start-button { padding: 12px 20px; background: var(--theme); color: #fff; font-weight: 600; border-radius: 999px; min-height: 46px; }
 .settings-interest-link { color: var(--theme); margin-top: 12px; font-size: 14px; }
-.article-shortcut { padding: 12px 24px; border-bottom: 1px solid var(--border); }
+.article-shortcut { display: none; padding: 12px 24px; border-bottom: 1px solid var(--border); }
 .article-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--theme); border-radius: 999px; color: var(--theme); background: var(--theme-soft); padding: 9px 14px; min-height: 44px; font-size: 14px; }
 .article-pill:hover { background: var(--hover); }
 .stats-note { padding: 20px 24px; color: var(--muted); font-size: 14px; line-height: 1.6; }
@@ -253,6 +253,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--theme); outline
   .explore-workspace { grid-template-columns: minmax(0,1fr) 300px; }
 }
 @media (max-width: 799px) {
+  .article-shortcut { display: block; }
   .start-screen { width: 100%; max-width: 600px; max-height: 100svh; border-radius: 0; border: 0; }
   .start-screen-content { padding: 26px 24px; gap: 16px; }
   .app-header { top: auto; bottom: 0; left: 50%; right: auto; transform: translateX(-50%); width: 100%; max-width: 600px; border: 1px solid var(--border); border-bottom: 0; background: var(--bg); padding-bottom: env(safe-area-inset-bottom,0px); }
