@@ -1,20 +1,29 @@
 import {test,expect} from '@playwright/test';
 const article={pageId:1,title:'Acceleration',extract:'Acceleration is the rate of change of velocity.',url:'https://en.wikipedia.org/wiki/Acceleration'};
-test('summary generates only on click and stays available when the article panel is hidden',async({page})=>{
-  let calls=0;
-  await page.route('**/api/wikipedia?title=*',r=>r.fulfill({json:{article,sections:[{title:'Overview',content:article.extract}],related:[],organized:false}}));
+test('open article jumps to the overview, resets other sections and restores a hidden panel',async({page})=>{
+  let summaryCalls=0;
+  const content=Array(12).fill(article.extract).join('\n\n');
+  await page.route('**/api/wikipedia?title=*',r=>r.fulfill({json:{article,sections:[{title:'Overview',content},{title:'Examples',content:'A different section.'}],related:[],organized:false}}));
   await page.route('**/api/gemini',r=>{
-    if(r.request().postDataJSON().action==='summary'){calls++;return r.fulfill({json:{summary:'Acceleration measures how quickly velocity changes.'}});}
+    if(r.request().postDataJSON().action==='summary') summaryCalls++;
     return r.fulfill({json:{related:[],organized:false}});
   });
   await page.goto('/explore/Acceleration');
+  await expect(page.getByRole('button',{name:'AI summary',exact:true})).toHaveCount(0);
+  await page.getByRole('tab',{name:'Examples',exact:true}).click();
+  await page.evaluate(()=>{document.querySelector('.article-panel')?.scrollTo(0,300);window.scrollTo(0,0);});
+  await page.getByRole('button',{name:'Open article',exact:true}).click();
+  await expect(page.getByRole('tab',{name:'Overview',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(page.locator('#article-heading')).toBeFocused();
+  await expect.poll(()=>page.locator('#section-content>p').first().evaluate(el=>{
+    const bounds=el.getBoundingClientRect();return bounds.top>=0 && bounds.bottom<innerHeight-72;
+  })).toBe(true);
   await page.getByRole('button',{name:'Hide article',exact:true}).click();
-  expect(calls).toBe(0);
-  await page.getByRole('button',{name:'AI summary',exact:true}).click();
-  await expect(page.locator('#ai-summary-content')).toContainText('Acceleration measures');
-  await page.getByRole('button',{name:'AI summary',exact:true}).click();
-  await page.getByRole('button',{name:'AI summary',exact:true}).click();
-  expect(calls).toBe(1);
+  await expect(page.locator('.article-panel')).toHaveCount(0);
+  await page.getByRole('button',{name:'Open article',exact:true}).click();
+  await expect(page.locator('#article-heading')).toBeFocused();
+  await expect(page.locator('#section-content>p').first()).toHaveText(article.extract);
+  expect(summaryCalls).toBe(0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test('stats reflects the stored library and fits mobile navigation',async({page})=>{

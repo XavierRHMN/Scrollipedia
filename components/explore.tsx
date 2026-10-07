@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Bookmark, Check, ChevronRight, LoaderCircle, Route, X } from 'lucide-react';
+import { Bookmark, BookOpen, Check, ChevronRight, LoaderCircle, Route, X } from 'lucide-react';
 import type { TopicDetail, WikiArticle } from '@/types';
 import { useLibrary } from './library-provider';
 import { Button } from './ui/button';
@@ -11,7 +11,6 @@ import { NarrationButton } from './narration-button';
 import { parseTrail } from '@/lib/trail';
 import { knownClientTopic, rememberTopic } from '@/lib/topic-client';
 import { useWikipediaLink } from './settings-provider';
-import { AiSummary } from './ai-summary';
 const KnowledgeGraph = dynamic(() => import('./knowledge-graph').then(m => m.KnowledgeGraph), { ssr: false, loading: () => <div className="graph-loading"><LoaderCircle size={26} className="spin"/>Drawing connections…</div> });
 export function Explore({ title }: { title: string }) {
   const wikipediaLink = useWikipediaLink();
@@ -23,6 +22,17 @@ export function Explore({ title }: { title: string }) {
   const requestRef = useRef<AbortController | null>(null);
   const sessionTopics = useRef(new Map<string,TopicDetail>());
   const [loadingTopic,setLoadingTopic] = useState('');
+  const articleRef = useRef<HTMLElement | null>(null);
+  const articleHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const [articleRequested,setArticleRequested] = useState(false);
+  function openArticle() { setSection(0); setPanel(true); setArticleRequested(true); }
+  useEffect(()=>{
+    if(!articleRequested || !panel || !articleRef.current) return;
+    articleRef.current.scrollTop=0;
+    articleRef.current.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+    articleHeadingRef.current?.focus({preventScroll:true});
+    setArticleRequested(false);
+  },[articleRequested,panel]);
   async function loadTopic(next: string, force = false) {
     requestRef.current?.abort();
     const cached = sessionTopics.current.get(next);
@@ -91,9 +101,9 @@ export function Explore({ title }: { title: string }) {
   if (error) return <main className="empty-state"><span className="eyebrow">Explore</span><h1>Could not load this topic.</h1><p>{error}</p><Button onClick={() => void loadTopic(topic?.article.title || title,true)}>Retry</Button><Button asChild variant="outline"><Link href="/scroll">Back to Scroll</Link></Button></main>;
   if (!topic) return <main className="explore-loading" aria-live="polite"><LoaderCircle className="spin" size={30}/><h1>Loading article</h1><p>Opening {title}…</p></main>;
   const selected = topic.sections[section];
-  return <main className="explore-page"><div className="explore-toolbar"><div><span className="eyebrow">Explore</span><h1>{topic.article.title}</h1></div><div className="toolbar-actions"><Button variant="outline" disabled={!ready} aria-pressed={isSaved(topic.article.pageId)} onClick={() => toggle(topic.article)}>{isSaved(topic.article.pageId) ? <Check size={17}/> : <Bookmark size={17}/>}<span>{isSaved(topic.article.pageId) ? 'Saved' : 'Save topic'}</span></Button><Button variant="outline" onClick={() => setPanel(v => !v)}>{panel ? 'Hide article' : 'Read article'}</Button></div></div>
+  return <main className="explore-page"><div className="explore-toolbar"><div><span className="eyebrow">Explore</span><h1>{topic.article.title}</h1></div><div className="toolbar-actions"><Button variant="outline" disabled={!ready} aria-pressed={isSaved(topic.article.pageId)} onClick={() => toggle(topic.article)}>{isSaved(topic.article.pageId) ? <Check size={17}/> : <Bookmark size={17}/>}<span>{isSaved(topic.article.pageId) ? 'Saved' : 'Save topic'}</span></Button><Button variant="outline" onClick={() => panel ? setPanel(false) : openArticle()}>{panel ? 'Hide article' : 'Read article'}</Button></div></div>
   {topic.sourceWarning && <div className="topic-notice" role="status"><p>{topic.sourceWarning}</p><Button variant="outline" onClick={() => void loadTopic(topic?.article.title || title,true)}>Retry connections</Button></div>}<div className="explore-trail" aria-label="Exploration path"><Route size={16}/>{trail.map((a,i) => <span key={`${a.pageId}-${i}`}>{i > 0 && <ChevronRight size={13}/>}<button onClick={() => navigate(a.title)}>{a.title}</button></span>)}{trail.length > 1 && <button className="save-path" disabled={pathSaved} onClick={() => { savePath(trail); setPathSaved(true); }}>{pathSaved ? 'Path saved' : 'Save path'}</button>}</div>
-  <AiSummary key={topic.article.title} title={topic.article.title}/>
-  <div className={panel ? 'explore-workspace' : 'explore-workspace panel-hidden'}><KnowledgeGraph key={title} article={topic.article} related={topic.related} onSelect={navigate} loading={loadingTopic} complete={!topic.sourceWarning}/>{panel && <aside className="article-panel"><div className="panel-heading"><span className="eyebrow">Article</span><button className="mobile-panel-close" aria-label="Close article panel" onClick={() => setPanel(false)}><X size={20}/></button></div><h2>{topic.article.title}</h2>{topic.article.description && <p className="article-description">{topic.article.description}</p>}<div className="section-tabs" role="tablist" aria-label="Article sections">{topic.sections.map((s,i) => <button key={`${s.title}-${i}`} role="tab" aria-selected={i === section} aria-controls="section-content" onClick={() => setSection(i)}>{s.title}</button>)}</div><div id="section-content" role="tabpanel" className="section-content"><div className="section-heading"><h3>{selected?.title}</h3><NarrationButton key={`${topic.article.title}-${section}`} title={topic.article.title} section={section}/></div>{selected?.content.split('\n\n').map((p,i) => <p key={i}>{p}</p>)}</div><a href={wikipediaLink(topic.article)} target="_blank" rel="noreferrer" className="article-source">Read the full article on Wikipedia</a><p className="source-credit">Wikipedia · CC BY-SA 4.0<br/>{topic.organized ? 'Connections organized with Gemini.' : 'Connections from Wikipedia & Wikidata.'}</p></aside>}</div>
+  <div className="article-shortcut"><button className="article-pill" aria-controls="article-overview" onClick={openArticle}><BookOpen size={16}/>Open article</button></div>
+  <div className={panel ? 'explore-workspace' : 'explore-workspace panel-hidden'}><KnowledgeGraph key={title} article={topic.article} related={topic.related} onSelect={navigate} loading={loadingTopic} complete={!topic.sourceWarning}/>{panel && <aside id="article-overview" ref={articleRef} className="article-panel" aria-labelledby="article-heading"><div className="panel-heading"><span className="eyebrow">Article</span><button className="mobile-panel-close" aria-label="Close article panel" onClick={() => setPanel(false)}><X size={20}/></button></div><h2 id="article-heading" ref={articleHeadingRef} tabIndex={-1}>{topic.article.title}</h2>{topic.article.description && <p className="article-description">{topic.article.description}</p>}<div className="section-tabs" role="tablist" aria-label="Article sections">{topic.sections.map((s,i) => <button key={`${s.title}-${i}`} role="tab" aria-selected={i === section} aria-controls="section-content" onClick={() => setSection(i)}>{s.title}</button>)}</div><div id="section-content" role="tabpanel" className="section-content"><div className="section-heading"><h3>{selected?.title}</h3><NarrationButton key={`${topic.article.title}-${section}`} title={topic.article.title} section={section}/></div>{selected?.content.split('\n\n').map((p,i) => <p key={i}>{p}</p>)}</div><a href={wikipediaLink(topic.article)} target="_blank" rel="noreferrer" className="article-source">Read the full article on Wikipedia</a><p className="source-credit">Wikipedia · CC BY-SA 4.0<br/>{topic.organized ? 'Connections organized with Gemini.' : 'Connections from Wikipedia & Wikidata.'}</p></aside>}</div>
   <div className="related-accessible"><span className="eyebrow">Related topics</span>{topic.related.map(r => <button key={r.pageId} onClick={() => navigate(r.title)}>{r.title}</button>)}{!topic.related.length && <p>No related topics were available. Try another article from Scroll.</p>}</div></main>;
 }
